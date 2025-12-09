@@ -1,0 +1,13 @@
+loci	genes	phenotype
+OL2α\.[1-3]	extra=.*gml[ABC]	O2β
+OL2α\.[1-3]	extra=.*orf8	O2αγ
+OL2α\.[1-3]	extra=.*wbbY	O1α,2α
+OL2α\.[1-3]	extra=.*wbb[YZ]	O1αβ,2α
+OL2α\.[1-3]	extra=.*(orf8|wbb[YZ])	O1αβ,2γ
+OL2α\.[1-3]	extra=.*(gml[ABC]|wbbY)	O1α,2β
+OL2α\.[1-3]	extra=.*(gml[ABC]|wbb[YZ])	O1αβ,2β
+OL2α\.[1-3]	extra=.*wbm[VW]	O11α,2α
+OL2α\.[1-3]	extra=.*wbm[VWX]	O11αβ,2α
+OL2α\.[1-3]	extra=.*(orf8|wbm[VWX])	O11αβ,2γ
+OL2α\.[1-3]	extra=.*(gml[ABC]|wbm[VW])	O11α,2β
+OL2α\.[1-3]	extra=.*(gml[ABC]|wbm[VWX])	O11αβ,2β

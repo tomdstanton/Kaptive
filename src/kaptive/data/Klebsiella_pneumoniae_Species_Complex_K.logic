@@ -1,0 +1,3 @@
+loci	genes	phenotype
+KL.*	truncated=.*_w(caJ|baP|za|zb|zc|zi|zx|zy)(_KL)?([1-9]{1,3})?	Capsule null
+KL22$	truncated=KL22_17_atr12	K37
