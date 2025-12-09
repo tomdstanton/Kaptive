@@ -1,0 +1,8 @@
+gene	unit
+gtr1	β-D-GlcpA-(1→4)-α-L-Fucp
+gtr2	α-L-Fucp-(1→3)-β-D-Glcp
+wzy_KL1	β-D-Glcp-(1→4)-β-D-GlcpA
+gtr3	β-D-Manp-(1→4)-α-D-Glcp
+gtr4	α-D-GlcpA-(1→3)-β-D-Manp
+gtr5	α-D-Glcp-(1→3)-β-D-Glcp
+wzy_KL2	β-D-Glcp-(1→4)-β-D-Manp

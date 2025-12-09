@@ -1,0 +1,8 @@
+{
+  "version": "0.1.0",
+  "keywords": ["kpsc_o", "kp_o", "k_o"],
+  "id_threshold": 82.5,
+  "doi": ["https://doi.org/10.1099/mgen.0.000102"],
+  "contact": {"Kelly Wyres": "kelly.wyres@monash.edu"},
+  "repository": "klebgenomics/Kaptive_databases"
+}

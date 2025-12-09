@@ -13,21 +13,13 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 details. You should have received a copy of the GNU General Public License along with Kaptive.
 If not, see <https://www.gnu.org/licenses/>.
 """
-from __future__ import annotations
-
-import sys
-import re
 import argparse
+import sys
 from io import TextIOWrapper
+from re import compile as regex
 
-from Bio import __version__ as biopython_version
-
-from kaptive.version import __version__
-from kaptive.log import bold, quit_with_error, log
-from kaptive.utils import get_logo, check_out, check_cpus, check_programs
-
-# Constants -----------------------------------------------------------------------------------------------------------
-_URL = 'https://kaptive.readthedocs.io/en/latest/'
+from . import RESOURCES
+from .utils import get_logo, bold, write_to_file_or_directory
 
 
 # Functions -----------------------------------------------------------------------------------------------------------
@@ -43,26 +35,6 @@ def parse_args(a) -> argparse.Namespace:
     convert_subparser(subparsers)
     opts = parser.add_argument_group(bold('Other options'), '')
     other_opts(opts)
-
-    if len(a) == 0:  # No arguments, print help message
-        parser.print_help(sys.stderr)
-        quit_with_error(f'Please specify a command; choose from {{assembly,extract,convert}}')
-    if any(x in a for x in {'-v', '--version'}):  # Version message
-        print(__version__)
-        sys.exit(0)
-    if subparser := subparsers.choices.get(a[0], None):  # Check if the first argument is a subparser
-        if len(a) == 1:  # Subparser help message
-            subparser.print_help(sys.stderr)
-            quit_with_error(f'Insufficient arguments for kaptive {a[0]}')
-        if any(x in a[1:] for x in {'-h', '--help'}):  # Subparser help message
-            subparser.print_help(sys.stderr)
-            sys.exit(0)
-    elif any(x in a for x in {'-h', '--help'}):  # Help message
-        parser.print_help(sys.stderr)
-        sys.exit(0)
-    else:  # Unknown command
-        parser.print_help(sys.stderr)
-        quit_with_error(f'Unknown command "{a[0]}"; choose from {{assembly,extract,convert}}')
     return parser.parse_args(a)
 
 
@@ -75,21 +47,17 @@ def assembly_subparser(subparsers):
     opts.add_argument('db', metavar='db path/keyword', help='Kaptive database path or keyword')
     opts.add_argument('input', nargs='+', metavar='fasta', help='Assemblies in fasta(.gz|.xz|.bz2) format')
     opts = assembly_parser.add_argument_group(bold('Output options'), "\nNote, text outputs accept '-' for stdout")
-    # Note these are different to the convert output options as TSV is the main output and fna is the main fasta output
     opts.add_argument('-o', '--out', metavar='', default=sys.stdout, type=argparse.FileType('at'),
                       help='Output file to write/append tabular results to (default: stdout)')
-    opts.add_argument('-f', '--fasta', metavar='', nargs='?', default=None, const='.', type=check_out,
+    opts.add_argument('-f', '--fasta', metavar='', nargs='?', default=None, const='.', type=write_to_file_or_directory,
                       help='Turn on fasta output\n'
                            'Accepts a single file or a directory (default: cwd)')
     opts.add_argument('-j', '--json', metavar='', nargs='?', default=None, const='kaptive_results.json',
-                      type=argparse.FileType('at'),
+                      type=write_to_file_or_directory,
                       help='Turn on JSON lines output\n'
                            'Optionally choose file (can be existing) (default: %(const)s)')
-    opts.add_argument('-s', '--scores', metavar='', nargs='?', default=None, const=sys.stdout,
-                      type=argparse.FileType('at'),
-                      help='Dump locus score matrix to tsv (typing will not be performed!)\n'
-                           'Optionally choose file (can be existing) (default: stdout)')
-    other_fmt_opts(opts)
+    opts.add_argument('--no-header', action='store_true', help='Suppress header line')
+
     opts = assembly_parser.add_argument_group(bold('Scoring options'), "")
     opts.add_argument('--min-cov', type=float, required=False, default=50.0, metavar='',
                       help='Minimum gene %%coverage (blen/q_len*100) to be used for scoring (default: %(default)s)')
@@ -122,12 +90,12 @@ def assembly_subparser(subparsers):
                       help="Typeable if any genes are below threshold (default: %(default)s)")
     opts = assembly_parser.add_argument_group(bold('Database options'), "")
     db_opts(opts)
-    opts.add_argument('--filter', type=re.compile, metavar='',
+    opts.add_argument('--filter', type=regex, metavar='',
                       help='Python regular-expression to select loci to include in the database')
     opts = assembly_parser.add_argument_group(bold('Other options'), "")
     other_opts(opts)
-    opts.add_argument('-t', '--threads', type=check_cpus, default=check_cpus(), metavar='',
-                      help="Number of alignment threads or 0 for all available (default: 0)")
+    opts.add_argument('-t', '--threads', type=int, default=RESOURCES.available_cpus, metavar='',
+                      help="Number of alignment threads or 0 for all available (default: %(default)s)")
 
 
 def convert_subparser(subparsers):
@@ -145,10 +113,11 @@ def convert_subparser(subparsers):
     opts.add_argument('-j', '--json', metavar='', nargs='?', default=None, const='-', type=check_out,
                       help='Convert to JSON lines format in file (default: stdout)')
     fmt_opts(opts)
-    other_fmt_opts(opts)
+    opts.add_argument('--no-header', action='store_true', help='Suppress header line')
+
     opts = convert_parser.add_argument_group(bold('Filter options'),
                                              "\nNote, filters take precedence in descending order")
-    opts.add_argument('-r', '--regex', metavar='', type=re.compile,
+    opts.add_argument('-r', '--regex', metavar='', type=regex,
                       help='Python regular-expression to select JSON lines (default: All)')
     opts.add_argument('-l', '--loci', metavar='', nargs='+',
                       help='Space-separated list to filter locus names (default: All)')
@@ -173,7 +142,7 @@ def extract_subparser(subparsers):
     fmt_opts(opts)
     opts = extract_parser.add_argument_group(bold('Database options'), "")
     db_opts(opts)
-    opts.add_argument('--filter', type=re.compile, metavar='',
+    opts.add_argument('--filter', type=regex, metavar='',
                       help='Python regular-expression to select loci to include in the database')
     opts = extract_parser.add_argument_group(bold('Other options'), "")
     other_opts(opts)
@@ -181,93 +150,78 @@ def extract_subparser(subparsers):
 
 def fmt_opts(opts: argparse.ArgumentParser):
     """Format opts shared by convert and extract"""
-    opts.add_argument('--fna', metavar='', nargs='?', default=None, const='.', type=check_out,
+    opts.add_argument('--fna', metavar='', nargs='?', default=None, const='.',
+                      type=write_to_file_or_directory,
                       help='Convert to locus nucleotide sequences in fasta format\n'
                            'Accepts a single file or a directory (default: cwd)')
-    opts.add_argument('--ffn', metavar='', nargs='?', default=None, const='.', type=check_out,
+    opts.add_argument('--ffn', metavar='', nargs='?', default=None, const='.',
+                      type=write_to_file_or_directory,
                       help='Convert to locus gene nucleotide sequences in fasta format\n'
                            'Accepts a single file or a directory (default: cwd)')
-    opts.add_argument('--faa', metavar='', nargs='?', default=None, const='.', type=check_out,
+    opts.add_argument('--faa', metavar='', nargs='?', default=None, const='.',
+                      type=write_to_file_or_directory,
                       help='Convert to locus gene protein sequences in fasta format\n'
                            'Accepts a single file or a directory (default: cwd)')
 
 
-def other_fmt_opts(opts: argparse.ArgumentParser):
-    """Format opts shared by convert and assembly"""
-    opts.add_argument('-p', '--plot', metavar='', nargs='?', default=None, const='.', type=check_out,
-                      help='Plot results to "./{assembly}_kaptive_results.{fmt}"\n'
-                           'Optionally choose a directory (default: cwd)')
-    opts.add_argument('--plot-fmt', default='png', metavar='png/svg', choices={'png', 'svg'},
-                      help='Format for locus plots (default: %(default)s)')
-    opts.add_argument('--no-header', action='store_true', help='Suppress header line')
-
-
 def db_opts(opts: argparse.ArgumentParser):
-    opts.add_argument('--locus-regex', type=re.compile, metavar='',
+    opts.add_argument('--locus-regex', type=regex, metavar='',
                       help=f'Python regular-expression to match locus names in db source note')
-    opts.add_argument('--type-regex', type=re.compile, metavar='',
+    opts.add_argument('--type-regex', type=regex, metavar='',
                       help=f'Python regular-expression to match locus types in db source note')
 
 
 def other_opts(opts: argparse.ArgumentParser):
-    opts.add_argument('-V', '--verbose', action='store_true', help='Print debug messages to stderr')
     opts.add_argument('-v', '--version', help='Show version number and exit', metavar='')
     opts.add_argument('-h', '--help', help='Show this help message and exit', metavar='')
 
 
 # Main -----------------------------------------------------------------------------------------------------------------
 def main():
-    if sys.version_info.major < 3 or sys.version_info.minor < 9:
-        quit_with_error(f'Python version 3.9 or greater required')
-
-    if int(biopython_version.split('.')[0]) < 1 or int(biopython_version.split('.')[1]) < 83:
-        quit_with_error('Biopython version 1.83 or greater required')
-
     args = parse_args(sys.argv[1:])  # Parse the arguments
 
     # Assembly mode ----------------------------------------------------------------------------------------------------
     if args.subparser_name == 'assembly':
-        check_programs(['minimap2'], verbose=args.verbose)
-        from kaptive.assembly import typing_pipeline, write_headers
-        from kaptive.database import load_database
+        check_programs(['minimap2'])
+        from src.kaptive.io import typing_pipeline, write_headers
+        from src.kaptive.db import load_database
 
-        args.db = load_database(
-            args.db, args.gene_threshold, locus_filter=args.filter, load_locus_seqs=True, verbose=args.verbose,
-            extract_translations=False, locus_regex=args.locus_regex, type_regex=args.type_regex)
+        db = load_database(
+            args.db, args.gene_threshold, locus_filter=args.filter, load_locus_seqs=True,
+            extract_translations=False, locus_regex=args.locus_regex, type_regex=args.type_regex
+        )
 
         write_headers(args.scores or args.out, args.no_header, args.scores)
 
         for assembly in args.input:
-            if result := typing_pipeline(assembly, args.db, args.threads, args.score_metric, args.weight_metric,
+            if result := typing_pipeline(assembly, db, args.threads, args.score_metric, args.weight_metric,
                                          args.min_cov, args.n_best, args.max_other_genes, args.percent_expected,
-                                         args.below_threshold, args.scores, args.verbose):
-                result.write(args.out, args.json, args.fasta, None, None, args.plot, args.plot_fmt)
+                                         args.below_threshold, args.scores):
+                result.write(args.out, args.json, args.fasta, None, None)
 
     # Extract mode -----------------------------------------------------------------------------------------------------
     elif args.subparser_name == 'extract':
-        from kaptive.database import parse_database
-        for locus in parse_database(args.db, args.filter, args.fna, args.faa, args.verbose,
-                                    locus_regex=args.locus_regex, type_regex=args.type_regex):
+        from src.kaptive.db import parse_database
+        for locus in parse_database(args.db, args.filter, bool(args.fna), bool(args.faa), args.locus_regex, args.type_regex):
             locus.write(args.fna, args.ffn, args.faa)
 
     # Convert mode -----------------------------------------------------------------------------------------------------
     elif args.subparser_name == 'convert':
-        from kaptive.database import load_database
-        from kaptive.assembly import parse_result, write_headers
+        from src.kaptive.db import load_database
+        from src.kaptive.io import parse_result, write_headers
 
-        args.db = load_database(  # Load database in memory, we don't need to load the full sequences (False)
-            args.db, verbose=args.verbose, load_locus_seqs=False, extract_translations=False,
-            locus_regex=args.locus_regex, type_regex=args.type_regex)
+        db = load_database(  # Load database in memory, we don't need to load the full sequences (False)
+            args.db, load_locus_seqs=False, extract_translations=False,
+            locus_regex=args.locus_regex, type_regex=args.type_regex
+        )
 
         write_headers(args.tsv, args.no_header)
 
         for line in args.input:
-            if result := parse_result(line, args.db, args.regex, args.samples, args.loci):
-                result.write(args.tsv, args.json, args.fna, args.ffn, args.faa, args.plot, args.plot_fmt)
+            if result := parse_result(line, db, args.regex, args.samples, args.loci):
+                result.write(args.tsv, args.json, args.fna, args.ffn, args.faa)
 
     # Cleanup ----------------------------------------------------------------------------------------------------------
     for attr in vars(args):  # Close all open files in the args namespace if they aren't sys.stdout or sys.stdin
         if (x := getattr(args, attr, None)) and isinstance(x, TextIOWrapper) and x not in {sys.stdout, sys.stdin}:
             x.close()  # Close the file
-
-    log("Done!", verbose=args.verbose)

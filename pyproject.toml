@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "kaptive"
 authors = [
@@ -9,9 +5,10 @@ authors = [
 ]
 description = "In silico serotyping"
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.9"
-dependencies = ["biopython", "numpy", "matplotlib", "dna_features_viewer"]
-keywords = ["bioinformatics", "serotyping", "microbiology"]
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "edlib"]
+dynamic = ["version"]
+keywords = ["bioinformatics", "serotyping", "microbiology", "genomics"]
 license = {file = "LICENSE"}
 classifiers = [
     "Environment :: Console",
@@ -23,19 +20,23 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
 ]
-dynamic = ["version"]
 
 [project.scripts]
-kaptive = "kaptive.__main__:main"
+eris = "kaptive.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["kaptive"]
-exclude = ["test", 'development']
+[project.optional-dependencies]
+meta = ["scikit-learn"]
+test = ["pytest"]
+docs = ["mkdocs-material", "mkdocs-api-autonav>=0.3.0,<0.4"]
+dev = ["kaptive[test,docs,meta]"]
 
-[tool.setuptools.package-data]
-kaptive = ['../reference_database/*']
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
 
-[tool.setuptools.dynamic]
-version = {attr = "kaptive.version.__version__"}
+[tool.hatch.version]
+source = "vcs"
+
