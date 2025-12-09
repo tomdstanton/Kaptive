@@ -13,8 +13,7 @@ If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 from typing import Iterable, Generator
 from itertools import groupby
-from kaptive.misc import range_overlap
-from kaptive.log import warning
+from kaptive.utils import range_overlap
 
 
 # Classes -------------------------------------------------------------------------------------------------------------
@@ -28,11 +27,11 @@ class Alignment:
     """
 
     def __init__(
-            self, q: str | None = None, q_len: int | None = 0, q_st: int | None = 0,
-            q_en: int | None = 0, strand: str | None = None, ctg: str | None = None,
+            self, q: str = None, q_len: int | None = 0, q_st: int | None = 0,
+            q_en: int | None = 0, strand: str = None, ctg: str = None,
             ctg_len: int | None = 0, r_st: int | None = 0, r_en: int | None = 0,
             mlen: int | None = 0, blen: int | None = 0, mapq: int | None = 0,
-            tags: dict | None = None):
+            tags: dict = None):
         self.q = q or 'unknown'  # Query sequence name
         self.q_len = q_len  # Query sequence length
         self.q_st = q_st  # Query start coordinate (0-based)
@@ -95,19 +94,6 @@ class Alignment:
 
 
 # Functions ------------------------------------------------------------------------------------------------------------
-def iter_alns(data: str) -> Generator[Alignment, None, None]:
-    """Iterate over alignments in a chunk of data"""
-    # It's probably better to decode the data here rather than in the Alignment class
-    if not data:
-        return None
-    for line in data.splitlines():
-        try:
-            yield Alignment.from_paf_line(line)
-        except AlignmentError:
-            warning(f"Skipping invalid alignment line: {line}")
-            continue
-
-
 def group_alns(alignments: Iterable[Alignment], key: str = 'q') -> Generator[tuple[str, Generator[Alignment]]]:
     """Group alignments by a key"""
     yield from groupby(sorted(alignments, key=lambda x: getattr(x, key)), key=lambda x: getattr(x, key))
@@ -143,7 +129,6 @@ def cull_filtered(pred: callable, alignments: Iterable[Alignment]) -> Generator[
         other = list(cull(i, other))
         yield i
     yield from other
-
 
 # def extend_aln_ranges(q_len: int, q_st: int, q_en: int, ctg_len: int, r_st: int, r_en: int, tolerance: int = 10
 #                       ) -> tuple[int, int, int, int]:

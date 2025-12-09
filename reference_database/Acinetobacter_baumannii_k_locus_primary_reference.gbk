@@ -704,7 +704,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="TYTH-1"
                      /note="K locus: KL10"
-                     /note="K type: unknown"
+                     /note="K type: K10"
      CDS             complement(1..2196)
                      /codon_start=1
                      /gene="wzc"
@@ -2856,7 +2856,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="Ab929"
                      /note="K locus: KL102"
-                     /note="K type: unknown"
+                     /note="K type: K102"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -23681,7 +23681,7 @@ REFERENCE   1  (bases 1 to 20714)
   TITLE     Involvement of a Phage-Encoded Wzy Protein in the Polymerization of
             K127 Units To Form the Capsular Polysaccharide of Acinetobacter
             baumannii Isolate 36-1454
-  JOURNAL   Microbiology Spectrum (2022)
+  JOURNAL   Microbiol Spectr. 10(3), e01503-21 (2022) 
 COMMENT     Sequence obtained for annotation from NCBI accession number
             MK399427.1 REGION: 3276..23989. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -23780,7 +23780,7 @@ FEATURES             Location/Qualifiers
                      /note="predicted glycosyltransferase"
                      /codon_start=1
                      /transl_table=11
-                     /product="Gtr 75"
+                     /product="Gtr75"
                      /protein_id="QBM04713.1"
                      /translation="MIILSIIVPIYKVEEYIVECIESICNQLISGVEIILVNDGTPDTS
                      MALARNYIAQKYPHFENQFVFIDQKNQGQSVARNNALKIAKGEYIGFLDSDDYLLPNYF
@@ -24954,7 +24954,7 @@ FEATURES             Location/Qualifiers
                      /country="Russia"
                      /collection_date="12-Apr-2015"
                      /note="K locus: KL129"
-                     /note="K type: unknown"
+                     /note="K type: K129"
      CDS             complement(1..2196)
                      /gene="wzc"
                      /note="protein tyrosine kinase; involved in capsule export"
@@ -30003,7 +30003,7 @@ FEATURES             Location/Qualifiers
      CDS             12006..13040
                      /codon_start=1
                      /gene="gtr25"
-                     /product="Gtr125 glycosyltransferase"
+                     /product="Gtr25 glycosyltransferase"
                      /protein_id="########.[11]"
                      /transl_table=11
                      /translation="MKILFVINSLKKKSGTERVAIELANKLSIMANYDVTLLNRESIKS
@@ -30523,9 +30523,14 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 23670)
-  AUTHORS   Kenyon,J.J. (annotated by)
-  TITLE     Acinetobacter baumannii KL135 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
+  AUTHORS   Shashkov, A.S., Kasimova, A.A., Arbatsky, N.P., Sof'ya, N.S., 
+            Perepelov, A.V., Dmitrenok, A.S., Chizhov, A.O., Knirel, Y.A., 
+            Shneider, M.M., Popova, A.V. and Kenyon, J.J.
+  TITLE     Complete chemical structure of the K135 capsular polysaccharide 
+            produced by Acinetobacter baumannii RES-546 that contains  
+            5,7-di-N-acetyl-8-epipseudaminic acid.
+  JOURNAL   Carbohydr Res. 523, 108726 (2023)
+   PUBMED   36446189
 COMMENT     Sequence obtained for annotation from NCBI accession number
             DADBIM010000017 REGION: 31592..58216. Sequence authors listed in
             entry.
@@ -30536,7 +30541,7 @@ FEATURES             Location/Qualifiers
                      /strain="13ARS_MAR0082"
                      /db_xref="taxon:470"
                      /note="K locus: KL135"
-                     /note="K type: unknown"
+                     /note="K type: K135"
      CDS             complement(1..2199)
                      /codon_start=1
                      /gene="wzc"
@@ -35761,18 +35766,23 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 22837)
-  AUTHORS   Kenyon,J.J., Shneider,M., Shelenkov,A., Mikhailova,Y.
-  TITLE     Acinetobacter baumannii KL141 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
-COMMENT     Sequence provided by Shneider,M.M..
+  AUTHORS   Kasimova, A.A., Kolganova, A.S., Shashkov, A.S., Shneider, M.M., 
+            Mikhailova, Y.V., Shelenkov, A.A., Popova, A.V., Knirel, Y.A., 
+            Perepelov, A.V. and Kenyon, J.J.
+  TITLE     Structure of the K141 capsular polysaccharide produced by 
+            Acinetobacter baumannii isolate KZ1106 that carries KL141 at the 
+            chromosomal K locus.
+  JOURNAL   Carbohydr. Res. 538, 109097 (2024)
+   PUBMED   38555658
+COMMENT     Sequence provided by Shneider,M.M.
 FEATURES             Location/Qualifiers
      source          1..22837
                      /organism="Acinetobacter baumannii"
                      /mol_type="genomic DNA"
-                     /strain="MSh1_assembly_lg250"
+                     /strain="KZ1106"
                      /db_xref="taxon:470"
                      /note="K locus: KL141"
-                     /note="K type: unknown"
+                     /note="K type: K141"
      CDS             complement(1..2196)
                      /codon_start=1
                      /gene="wzc"
@@ -46984,7 +46994,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="MRSN21660"
                      /note="K locus: KL155"
-                     /note="K type: unknown"
+                     /note="K type: K155"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -97819,9 +97829,14 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 24235)
-  AUTHORS   Kenyon,J.J.
-  TITLE     Acinetobacter baumannii KL218 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
+  AUTHORS   Kasimova, A.A., Dudnik, A.G., Shashkov, A.S., Shneider, M.M., 
+            Christofferson, A., Shelenkov, A.A., Mikhailova, Y.V., Kenyon, J.J. 
+            and Knirel, Y.A.
+  TITLE     The K218 capsular polysaccharide produced by Acinetobacter baumannii 
+            isolate 52-249 includes 5, 7-di-N-acetylpseudaminic acid linked by a 
+            KpsS3 glycosyltransferase. 
+  JOURNAL   Int. J. Biol. Macromol. 218, 310-316 (2022)
+   PUBMED   35872309
 COMMENT     Sequence obtained for annotation from NCBI accession number
             NIWR01000011. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -97830,7 +97845,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="PLG9P835"
                      /note="K locus: KL218"
-                     /note="K type: unknown"
+                     /note="K type: K218"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -101760,6 +101775,23 @@ REFERENCE   1  (bases 1 to 24469)
             baumannii NIPH146 that carries the KL37 capsule gene cluster.
   JOURNAL   Carbohydr Res. 413, 12-15 (2015)
    PUBMED   26057991
+REFERENCE   2  (bases 1 to 22502)
+  AUTHORS   Timoshina, O.Y., Kasimova, A.A., Shneider, M.M., Arbatsky, N.P., 
+            Shashkov, A.S., Shelenkov, A.A., Mikhailova, Y.V., Popova, A.V.,  
+            Hall, R.M., Knirel, Y.A. and Kenyon, J.J.
+  TITLE     Loss of a branch sugar in the Acinetobacter baumannii K3-type  
+            capsular polysaccharide due to frameshifts in the gtr6 
+            glycosyltransferase gene leads to susceptibility to phage APK37. 1.
+  JOURNAL   Microbiol Spectr 11(1), e03631-22 (2023)
+   PUBMED   36651782
+REFERENCE   3  (bases 1 to 22502)
+  AUTHORS   Talyansky, Y., Nielsen, T.B., Yan, J., Carlino-Macdonald, U., Di 
+            Venanzio, G., Chakravorty, S., Ulhaq, A., Feldman, M.F., Russo, T.A., 
+            Vinogradov, E., Luna, B., Wright, M.S., Adams, M.D., Speelberg, B.
+  TITLE     Capsule carbohydrate structure determines virulence in Acinetobacter 
+            baumannii.
+  JOURNAL   PLoS pathog. 17(2), e1009291 (2021).
+   PUBMED   33529209
 COMMENT     Sequence obtained for annotation from NCBI accession number
             KC526920.1 REGION: 3248..27716. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -116271,9 +116303,14 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 24852)
-  AUTHORS   Kenyon,J.J.
-  TITLE     Acinetobacter baumannii KL239 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
+  AUTHORS   Kasimova, A.A., Shashkov, A.S., Shneider, M.M., Sheck, E.A., 
+            Mikhailova, Y.V., Shelenkov, A.A., Popova, A.V., Knirel, Y.A. and 
+            Kenyon, J.J.
+  TITLE     The Acinetobacter baumannii K239 capsular polysaccharide includes 
+            heptasaccharide units that are structurally related to K86 but joined 
+            by different linkages formed by different Wzy polymerases.
+  JOURNAL   Int. J. Biol. Macromol. 130045 (2024)
+   PUBMED   38336317
 COMMENT     Sequence obtained for annotation from NCBI accession number
             CP059542. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -116282,7 +116319,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="E-011922"
                      /note="K locus: KL239"
-                     /note="K type: unknown"
+                     /note="K type: K239"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -123820,6 +123857,23 @@ REFERENCE   2  (bases 1 to 22502)
             capsule in Acinetobacter baumannii
   JOURNAL   Mol Microbiol 89 (5), 816-830 (2013)
    PUBMED   23782391
+REFERENCE   3  (bases 1 to 22502)
+  AUTHORS   Timoshina, O.Y., Kasimova, A.A., Shneider, M.M., Arbatsky, N.P., 
+            Shashkov, A.S., Shelenkov, A.A., Mikhailova, Y.V., Popova, A.V.,  
+            Hall, R.M., Knirel, Y.A. and Kenyon, J.J.
+  TITLE     Loss of a branch sugar in the Acinetobacter baumannii K3-type  
+            capsular polysaccharide due to frameshifts in the gtr6 
+            glycosyltransferase gene leads to susceptibility to phage APK37. 1.
+  JOURNAL   Microbiol Spectr 11(1), e03631-22 (2023)
+   PUBMED   36651782
+REFERENCE   4  (bases 1 to 22502)
+  AUTHORS   Talyansky, Y., Nielsen, T.B., Yan, J., Carlino-Macdonald, U., Di 
+            Venanzio, G., Chakravorty, S., Ulhaq, A., Feldman, M.F., Russo, T.A., 
+            Vinogradov, E., Luna, B., Wright, M.S., Adams, M.D., Speelberg, B.
+  TITLE     Capsule carbohydrate structure determines virulence in Acinetobacter 
+            baumannii.
+  JOURNAL   PLoS pathog. 17(2), e1009291 (2021).
+   PUBMED   33529209
 COMMENT     Sequence obtained for annotation from NCBI accession number
             CP018664.1. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -132202,7 +132256,7 @@ FEATURES             Location/Qualifiers
                      /country="Australia"
                      /collection_date="2013"
                      /note="K locus: KL40"
-                     /note="K type: K40/K91"
+                     /note="K type: K40"
      CDS             complement(1..2184)
                      /codon_start=1
                      /gene="wzc"
@@ -145878,7 +145932,7 @@ FEATURES             Location/Qualifiers
                      /isolate="BAL_114"
                      /country="Vietnam"
                      /note="K locus: KL58"
-                     /note="K type: unknown"
+                     /note="K type: K58"
      CDS             complement(1..2187)
                      /gene="wzc"
                      /locus_tag="KL58_01_wzc"
@@ -150687,11 +150741,13 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 31390)
-  AUTHORS   Kenyon,J.J., Marzaioli,A.M., De Castro,C. and Hall,R.M.
-  TITLE     5,7-di-N-acetyl-acinetaminic acid: A novel non-2-ulosonic acid found
-            in the capsule of an Acinetobacter baumannii isolate.
-  JOURNAL   Glycobiology 25 (6), 644-654 (2015)
-   PUBMED   25595948
+  AUTHORS   Arbatsky, N.P., Kasimova, A.A., Shashkov, A.S., Shneider, M.M., 
+            Popova, A.V., Perepelov, A.V., Hall, R.M., Kenyon, J.J. and Knirel, 
+            Y.A.
+  TITLE     Revised structure of the polysaccharide from Acinetobacter baumannii 
+            LUH5551 assigned as the K63 type capsular polysaccharide.
+  JOURNAL   Carbohydrates. Res. 535, 109020 (2024)
+   PUBMED   38150754
 REFERENCE   2  (bases 1 to 31390)
   AUTHORS   Haseley,S. and Wilkinson,S.G.
   TITLE     Structural studies of the putative O-specific polysaccharide of
@@ -157027,9 +157083,14 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 26480)
-  AUTHORS   Kenyon,J.J. and Hall,R.M.
-  TITLE     Acinetobacter baumannii KL70 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
+  AUTHORS   Kasimova, A.A., Sharar, N.S., Ambrose, S.J., Knirel, Y.A., Shneider, 
+            M.M., Timoshina, O.Y., Popova, A.V., Perepelov, A.V., Dmitrenok, 
+            A.S., Hsu, L.Y., Hall, R.M., and Kenyon, J.J.
+  TITLE     The Acinetobacter baumannii K70 and K9 capsular polysaccharides 
+            consist of related K-units linked by the same Wzy polymerase and  
+            cleaved by the same phage depolymerases.
+  JOURNAL   Microbiol. Spectr. 11(6), e03025-23 (2023)
+   PUBMED   37975684
 COMMENT     Sequence obtained for annotation from NCBI accession number
             PYDX01000015. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -157038,7 +157099,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="SGH0807"
                      /note="K locus: KL70"
-                     /note="K type: unknown"
+                     /note="K type: K70"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -157826,7 +157887,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="48 n"
                      /note="K locus: KL71"
-                     /note="K type: unknown"
+                     /note="K type: K71"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -167139,7 +167200,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic DNA"
                      /isolate="LUH3713"
                      /note="K locus: KL81"
-                     /note="K type: K2/K81"
+                     /note="K type: K2"
      CDS             complement(1..2187)
                      /codon_start=1
                      /gene="wzc"
@@ -173051,14 +173112,14 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 24496)
-  AUTHORS   Kenyon,J.J., Kasimova,A.A., Shneider,M.M., Shashkov,A.S., Arbatsky,
-            N.P., Popova,A.V., Miroshnikov,K.A., Hall,R.M. and Knirel,Y.A.
-  TITLE     The KL24 gene cluster and a genomic island encoding a Wzy polymerase
-            contribute genes needed for synthesis of the K24 capsular
-            polysaccharide by the multiply antibiotic resistant Acinetobacter
-            baumannii isolate RCH51.
-  JOURNAL   Microbiology 163 (3), 355-363 (2017)
-   PUBMED   28356169
+  AUTHORS   Arbatsky, N.P., Shashkov, A.S., Shneider, M.M., Popova, A.V., 
+            Kasimova, A.A., Miroshnikov, K.A., Knirel, Y.A., Hall, R.M. and 
+            Kenyon, J.J.
+  TITLE     The K89 capsular polysaccharide produced by Acinetobacter baumannii 
+            LUH5552 consists of a pentameric repeat-unit that includes a 
+            3-acetamido-3, 6-dideoxy-d-galactose residue. 
+  JOURNAL   Int. J. Biol. Macromol. 217, 515-521 (2022)
+   PUBMED   35843396
 COMMENT     Sequence obtained for annotation from NCBI accession number
             KC526919. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -176196,7 +176257,6 @@ FEATURES             Location/Qualifiers
                      VLPHLVDQYGIVDVATVPQEGGNEVVRAIVEKPNIADAPSNLSVVGRYVLPNKIMNILE
                      RTSKGAGNEIQLTDAIATLQQNDVVEAYRMRGKTFDCGNKLGYLKAVLDYGVNHPKLGK
                      DFKQLIADLNIQLS"
-                     /locus_tag="KL92_17_galU"
      CDS             18653..19918
                      /gene="ugd"
                      /codon_start=1
@@ -178218,7 +178278,7 @@ FEATURES             Location/Qualifiers
                      /country="Netherlands"
                      /collection_date="2002"
                      /note="K locus: KL95"
-                     /note="K type: unknown"
+                     /note="K type: K95"
      CDS             complement(1..2196)
                      /gene="wzc"
                      /codon_start=1
@@ -180618,9 +180678,12 @@ SOURCE      Acinetobacter baumannii
             Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
             complex.
 REFERENCE   1  (bases 1 to 24198)
-  AUTHORS   Kenyon,J.J. and Hall,R.M.
-  TITLE     Acinetobacter baumannii KL98 capsule biosynthesis gene cluster
-  JOURNAL   Unpublished
+  AUTHORS   Kasimova, A.A., Shneider, M.M., Edelstein, M.V., Dzhaparova, A.A., 
+            Shashkov, A.S., Knirel, Y.A. and Kenyon, J.J.
+  TITLE     Structure of the K98 capsular polysaccharide from Acinetobacter 
+            baumannii REV-1184 containing a cyclic pyruvic acid acetal. 
+  JOURNAL   Int. J. Biol. Macromol. 218, 447-455. (2022)
+   PUBMED   35872312
 COMMENT     Sequence obtained for annotation from NCBI accession number
             MZ399256.1. Sequence authors listed in entry.
 FEATURES             Location/Qualifiers
@@ -182390,10 +182453,78 @@ ORIGIN
       901 catcagcctc tgctatgtat tattgcaaca tcaattgtga ctattgtcgc agcaaatatt
       961 tcatatcaat tatatgagaa accatttatt aaattaggta agaaggttac aagcaactaa
 //
-LOCUS       wzy-Ph1                 1044 bp    DNA              UNK 11-JUL-2021
-DEFINITION  Acinetobacter baumannii, wzy-Ph1.
-ACCESSION   wzy-Ph1
-VERSION     wzy-Ph1
+LOCUS       atr44-Ph                1047 bp    DNA              UNK 08-NOV-2024
+DEFINITION  Acinetobacter baumannii atr44-Ph.
+ACCESSION   atr44-Ph
+VERSION     atr44-Ph
+KEYWORDS    .
+SOURCE      Acinetobacter baumannii
+  ORGANISM  Acinetobacter baumannii
+            Bacteria; Pseudomonadota; Gammaproteobacteria; Moraxellales;
+            Moraxellaceae; Acinetobacter; Acinetobacter calcoaceticus/baumannii
+            complex.
+REFERENCE   1  (bases 1 to 1047)
+  AUTHORS   Mcgann,P., Snesrud,E. and Galac,M.R.
+  TITLE     A Diverse Panel of Clinical Acinetobacter baumannii for Research
+            Use
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1047)
+  AUTHORS   Kenyon,J.J. (annotated by)
+  TITLE     Acinetobacter baumannii atr44-Ph
+  JOURNAL   Unpublished
+COMMENT     Sequence obtained for annotation from NCBI accession number
+            VHFS01000003 REGION: 10674..11720. Sequence authors listed in entry.
+COMMENT     
+FEATURES             Location/Qualifiers
+     source          1..1047
+                     /organism="Acinetobacter baumannii"
+                     /mol_type="genomic DNA"
+                     /strain="MRSN31468"
+                     /isolation_source="groin"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:470"
+                     /geo_loc_name="Germany"
+                     /collection_date="2003"
+                     /note="Extra genes: atr44-Ph"
+     CDS             1..1047
+                     /gene="atr44-Ph"
+                     /locus_tag="Extra_genes_atr44-Ph"
+                     /codon_start=1
+                     /transl_table=11
+                     /note="predicted Atr44 acetyltransferase"
+                     /product="Atr44-Ph"
+                     /protein_id="TPT62749.1"
+                     /translation="MKRFESLDWLRGLMAFAIMIYHLIGWQLFHPESGSVLGNFGVYG
+                     VSIFFVLSGLSMGIVYNNYIKGLHTSFVFFVRRLFRLLPLLWIAIAVVSGISFILHGQ
+                     IDLYKIFLNATLLFGFIAPAEYINIGAWSIGNETFYYAFTPLLIMLYAKHKQLGNLAV
+                     FGLVAVGIYFAFYALDSSKPLSEQWQIYINPFNNFFLYACGLALYYNFHEVSMKNMAN
+                     ALVVISLAILCFYPVSGDQINITTGVNRVVFALASIALTLGFYKLEIELPNWFSKPFA
+                     NLGEATYGVYLLHPVVYMFVNKVIHQPILCIVVTSVATIIAANISYRIYEKPFIKLGK
+                     KVTTVDRRVYESAS"
+ORIGIN      
+        1 atgaaacgat tcgaaagctt ggactggttg cgggggttaa tggccttcgc aatcatgatt
+       61 tatcatttaa taggatggca gttgtttcat ccagaatcag gaagtgtttt aggtaacttt
+      121 ggagtatatg gagtttcaat attctttgtg ctttcgggtc taagtatggg aattgtatac
+      181 aacaattata ttaaaggcct tcacacatct tttgtattct ttgtccgtcg tttatttagg
+      241 cttttgccac ttttatggat agcgatagct gtagtctcag gcataagttt tatattacat
+      301 gggcaaattg atttatataa aatcttctta aatgccacat tattatttgg ttttattgcg
+      361 ccagcagagt atataaacat tggagcttgg agcattggga atgagacttt ctattatgca
+      421 ttcactccat tgcttattat gctttatgct aagcataaac aactagggaa tttggctgtt
+      481 tttggtttgg ttgctgttgg gatttatttt gctttttatg cgttagattc tagcaagcct
+      541 ctgtcagaac aatggcaaat ttacatcaat ccatttaata actttttcct atatgcttgt
+      601 ggtttagctt tgtattacaa ctttcatgaa gtaagcatga aaaatatggc taatgcttta
+      661 gttgtaatct cacttgctat tttatgtttc tatcccgtat ctggtgatca gattaacatc
+      721 actactgggg taaatcgggt tgtttttgcg ttggcttcaa tagctttgac attaggcttt
+      781 tataagcttg agatagaatt gccaaattgg ttttctaaac cttttgcaaa tttaggcgaa
+      841 gcaacatatg gggtttactt attacatcca gtcgtttaca tgtttgttaa taaggttatt
+      901 caccaaccaa ttctctgcat tgttgttact tcagtcgcaa caatcattgc tgcaaatatt
+      961 tcataccgaa tctatgagaa gccatttatc aagttaggta agaaggtaac tacagttgac
+     1021 cgtcgtgtct atgagagtgc gagctga
+//
+LOCUS       wzyPh1                  1044 bp    DNA              UNK 11-JUL-2021
+DEFINITION  Acinetobacter baumannii, wzyPh1.
+ACCESSION   wzyPh1
+VERSION     wzyPh1
 KEYWORDS    .
 SOURCE      Acinetobacter baumannii
   ORGANISM  Acinetobacter baumannii
@@ -182410,7 +182541,7 @@ REFERENCE   1  (bases 1 to 1044)
   JOURNAL   Microbiology Spectrum (2022)
 REFERENCE   2  (bases 1 to 1044)
   AUTHORS   Kenyon,J.J. (annotated by)
-  TITLE     Acinetobacter baumannii Wzy-Ph1
+  TITLE     Acinetobacter baumannii WzyPh1
   JOURNAL   Unpublished
 COMMENT     Sequence obtained for annotation from NCBI accession number
             JAHTLH010000003 REGION: 131401..132444. Sequence authors listed in
@@ -182423,10 +182554,10 @@ FEATURES             Location/Qualifiers
                      /db_xref="taxon:470"
                      /note="Extra genes: wzy-Ph1"
      CDS             1..1044
-                     /gene="wzy-Ph1"
+                     /gene="wzyPh1"
                      /codon_start=1
                      /transl_table=11
-                     /product="Wzy-Ph1"
+                     /product="WzyPh1"
                      /note="Wzy polymerase"
                      /translation="MNFIVRKETLLFLFISTIAALIVGNRGDTNDTQIYYDVFRYIDQL
                      PLLNPVSFYAQTGMEVGFGWYSWLISLFTSSNIVLFTIFSFLNFVFIYKTCREIGIKYI
@@ -182435,7 +182566,7 @@ FEATURES             Location/Qualifiers
                      SGSYNEEISLFSLPNIRTFLILMVLTYFSSERLRQNELYRLFLFLIFTALAIRVGFSEF
                      AIMSGRLSTAFSYVEIFALSMFFINRFAPITRGALLLIYCALQLFIVLYFQAPYLWNLY
                      FMPLHLY"
-                     /locus_tag="Extra_genes_wzy-Ph1"
+                     /locus_tag="Extra_genes_wzyPh1"
 ORIGIN
         1 atgaacttta tagttagaaa agaaactcta ttatttttat tcatatcaac tattgcagca
        61 ttaatagtcg gtaatcgtgg cgatacaaat gatactcaaa tttattacga tgtttttaga
@@ -182455,4 +182586,121 @@ ORIGIN
       901 tcaatgttct ttattaatag atttgcgcca attaccagag gagctttgct tctaatttat
       961 tgtgcgttgc aattatttat agttctatat tttcaagcgc catacttgtg gaatttatat
      1021 ttcatgccac tacacttata ttga
+//
+LOCUS       epaA                    1629 bp    DNA              UNA 17-MAY-2024
+DEFINITION  Acinetobacter baumannii strain BAL062 genome assembly, chromosome: 
+            1.
+ACCESSION   LT594095
+VERSION     .
+KEYWORDS    .
+SOURCE      Acinetobacter baumannii
+  ORGANISM  Acinetobacter baumannii
+REFERENCE   1  (bases 1 to 1629)
+  AUTHORS   Shashkov, A., Arbatsky, N., Senchenkova, S.N., Dmitrenok, A., 
+            Shneider, M.M., Knirel, Y., Hall, R.M. and Kenyon, J.J., 
+  TITLE     Characterisation of the carbapenem-resistant Acinetobacter baumannii 
+            clinical reference isolate BAL062 (CC2: KL58: OCL1): resistance 
+            properties and capsular polysaccharide structure. 
+  JOURNAL   bioRxiv, 2024-05 (2024)
+FEATURES             Location/Qualifiers
+     source          1..1629
+                     /strain="BAL062"
+                     /mol_type="genomic DNA"
+                     /note="Extra genes: epaA"
+                     /db_xref="taxon:470"
+                     /organism="Acinetobacter baumannii"
+     CDS             1..1629
+                     /codon_start=1
+                     /transl_table=11
+                     /gene="epaA"
+                     /locus_tag="Extra_genes_epaA"
+                     /product="EpaA"
+                     /translation="MSTVIFIQARTNSSRLPGKSLLTINGLPLVVLSAKRAGNTGKKVV
+                     VLTSNEASDDELYQVVTSNQIECFRGDLNDVLKRFNDALADYEDETIVVRLTADNILPD
+                     GELMDDLELQFLESGARYMVCSSPDSNVPYGISAEIFYAKEIREAHLKATSDFEREHVT
+                     PFIRKSYSNNIFYYKNKEFKGYSNFRVTIDTFDDYLSMHQMLSKVDDIINIKQSELVPL
+                     LLNLKFRPHYERSAKPMTLGGAQFGLNYGVTNSNGKITKEEANKIIKQAITEGVQYIDT
+                     ASAYGDSEIIIGEILRGGWKDRVKVITKLDPLNELSNSQNVEAIKYAVQASVFKSCRNL
+                     GVPKLDILMLHRANHLVENNKLIYEEIITLKNNGLIDDLGVSVQSAEEMELALGFEEIT
+                     FIQFPFNILDNRWESLVERIKLEKSKRKLILHARSVLLQGLLTSQEVNLWEKAHIENGE
+                     EIYKWLDCQYKINEKMSISDLCISYVNSQAWIDSVVIGVTSYNELLSNLQSVSMKLLTE
+                     KQIELINQNKPTLSEKSLNPALWSK"
+ORIGIN
+        1 atgagtacag taatttttat acaagctaga acaaattcat caagattgcc aggtaagtcg
+       61 ctattaacaa ttaatggatt gccattagta gtactatcag cgaagagagc aggaaataca
+      121 ggaaaaaagg tagttgttct tacatcaaat gaggcttcag atgatgagtt atatcaagta
+      181 gtaacctcaa atcagattga atgtttcaga ggtgatttaa atgatgtact caaacgattt
+      241 aatgatgctt tagctgatta tgaagatgaa acaatagtag ttcgtttgac tgctgataat
+      301 atattgccag atggtgaatt aatggatgac ctagagcttc aatttctcga atctggagcg
+      361 agatatatgg tttgttcttc tccagattct aatgtgccat atggtatctc tgcagaaatt
+      421 ttctatgcta aagaaataag agaagcacat ttaaaagcca cttcggattt tgagcgagaa
+      481 cacgttaccc cttttattag gaaaagttac tctaacaata ttttttatta taaaaataag
+      541 gaatttaaag gatactcaaa ttttagagta acaattgata cctttgatga ttatttatct
+      601 atgcatcaga tgctatcaaa agtagacgat attataaata tcaaacaatc agagttggtt
+      661 cccctattat taaatttaaa attcagaccc cattatgaga gaagtgctaa gcccatgact
+      721 ctaggcggtg cacaatttgg gcttaattat ggagtaacga atagtaatgg aaaaattaca
+      781 aaagaagaag caaataaaat tataaaacaa gcaattacag aaggtgtgca atatattgat
+      841 actgcgagtg cctacggtga tagtgaaata attatcggtg aaattttgcg tggtgggtgg
+      901 aaagatagag ttaaagtaat aacgaaatta gaccctttaa atgaattgag caattcacag
+      961 aatgttgaag caattaaata tgctgttcag gcatcggtgt tcaaatcttg taggaatcta
+     1021 ggggttccca agcttgatat cttaatgtta cacagagcaa accatttggt tgaaaataat
+     1081 aagctgattt atgaagagat aattacgctt aaaaataatg gtttgataga tgatttaggt
+     1141 gtctcagtac agtcggctga agaaatggaa ctggcacttg gctttgaaga aattactttt
+     1201 attcagtttc catttaatat tttagataac agatgggaat cactcgtcga gcgaataaaa
+     1261 ttagaaaaaa gtaagcggaa actgattctt catgctcgca gtgtgttgtt gcagggactt
+     1321 ttaacgtctc aagaagtgaa tttatgggaa aaagctcata tagaaaatgg tgaagaaata
+     1381 tataaatggt tagattgtca gtacaagatt aatgaaaaaa tgtcgatctc tgatctatgt
+     1441 attagctatg ttaattctca ggcttggatt gattcggttg tgattggagt tacttcatat
+     1501 aatgaactct tgtctaattt acaatccgtc tcgatgaagt tattaacaga gaagcagatt
+     1561 gaattaataa atcaaaataa accaacatta agtgaaaaat cattgaaccc tgcgctgtgg
+     1621 agtaagtga
+//
+LOCUS       epaB                     789 bp    DNA              UNA 17-MAY-2024
+DEFINITION  Acinetobacter baumannii strain BAL062 genome assembly, chromosome: 
+            1.
+ACCESSION   LT594095
+VERSION     .
+KEYWORDS    .
+SOURCE      Acinetobacter baumannii
+  ORGANISM  Acinetobacter baumannii
+REFERENCE   1  (bases 1 to 789)
+  AUTHORS   Shashkov, A., Arbatsky, N., Senchenkova, S.N., Dmitrenok, A., 
+            Shneider, M.M., Knirel, Y., Hall, R.M. and Kenyon, J.J., 
+  TITLE     Characterisation of the carbapenem-resistant Acinetobacter baumannii 
+            clinical reference isolate BAL062 (CC2: KL58: OCL1): resistance 
+            properties and capsular polysaccharide structure. 
+  JOURNAL   bioRxiv, 2024-05 (2024)
+FEATURES             Location/Qualifiers
+     source          1..789
+                     /strain="BAL062"
+                     /mol_type="genomic DNA"
+                     /note="Extra genes: epaB"
+                     /db_xref="taxon:470"
+                     /organism="Acinetobacter baumannii"
+     CDS             1..789
+                     /codon_start=1
+                     /transl_table=11
+                     /gene="epaB"
+                     /locus_tag="Extra_genes_epaB"
+                     /product="EpaB"
+                     /translation="MKLFNLEGKNAFISGATGYLGRQMAFALAEAGAHVLINSRSKDKC
+                     QELVKELNTLGYSAETAPFNVVDESDVNQFIDTFDKNKIDIVVSNSYAGGSGSLELSKN
+                     ANFIESYESSVMGANNLLRAFLPYMRNAVKENGYASFITIGSMYGVVIPDQRVYESKKV
+                     VNPPFYGASKAALIHWTKYAACEFSNENIRFNSISPGPFPNKETQNSNPEFVKKLVNKV
+                     PMGRIGCAEELKGPIVFLASNASSYVNGTNMMVDGGWTAW"
+ORIGIN
+        1 ttgaaattat ttaatctaga aggaaaaaac gcgtttatct ctggagcgac aggctatcta
+       61 ggtagacaaa tggcatttgc tttagctgaa gctggagcac atgtattaat taattcgaga
+      121 agtaaggata agtgccagga gttagttaaa gagctaaata cactgggata ctctgcagaa
+      181 actgcacctt ttaatgtcgt agatgaatct gatgtgaatc aatttataga tacatttgat
+      241 aaaaataaaa ttgatattgt tgtaagtaat tcatatgcgg gtggctctgg ctcattagaa
+      301 ttatcaaaaa atgctaattt tattgagagt tatgaatcta gtgttatggg tgcaaataac
+      361 ttactacgag cttttttgcc ttatatgaga aatgctgtaa aagaaaatgg ttatgcatca
+      421 tttattacta tcggatctat gtatggagta gttattccag atcaaagagt ttatgaaagt
+      481 aaaaaggttg taaacccacc attttatggc gccagtaaag cagcgcttat acattggaca
+      541 aagtatgccg cttgtgaatt ttcgaatgaa aatatacgtt ttaacagtat tagtcctgga
+      601 ccatttccta ataaagaaac ccaaaattca aatcctgaat ttgtaaaaaa attagtaaat
+      661 aaagttccga tgggccgtat cggttgtgcg gaagaactaa aaggacctat cgtcttttta
+      721 gcatcaaatg catcttcata tgtaaatggg acaaatatga tggttgatgg cggctggact
+      781 gcttggtag
 //
