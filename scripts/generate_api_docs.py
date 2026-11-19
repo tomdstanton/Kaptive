@@ -1,6 +1,6 @@
 from pathlib import Path
 
-modules_to_exclude = ["kaptive.cli", "kaptive.client", "kaptive.plotting", "kaptive.bgc", "kaptive._version"]
+modules_to_exclude = ["kaptive.cli", "kaptive.client", "kaptive.plotting", "kaptive._version"]
 src_dir = Path("src/kaptive")
 docs_api_dir = Path("docs/reference")
 docs_api_dir.mkdir(parents=True, exist_ok=True)

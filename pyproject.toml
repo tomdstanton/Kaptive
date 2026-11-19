@@ -34,9 +34,7 @@ dependencies = [
 [project.optional-dependencies]
 plot = ["plotly"]
 json = ["orjson"]
-bgc = ["pyfgs"]
-train = ["scikit-learn"]
-all = ["kaptive[plot,json,bgc,train]"]
+all = ["kaptive[plot,json]"]
 
 [dependency-groups]
 docs = [
