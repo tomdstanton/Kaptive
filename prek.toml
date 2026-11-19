@@ -1,0 +1,8 @@
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "ruff-format", name = "ruff format", entry = "uv run --no-sync ruff format", language = "system", types = ["python"], require_serial = true },
+  { id = "ruff-check", name = "ruff check", entry = "uv run --no-sync ruff check --fix", language = "system", types = ["python"], require_serial = true },
+  { id = "ty-check", name = "ty check", entry = "uv run --no-sync ty check src/", language = "system", types = ["python"], pass_filenames = false },
+  { id = "zensical-check", name = "zensical check", entry = "uv run --no-sync zensical build --strict", language = "system", files = "^(docs/|zensical\\.toml$)", pass_filenames = false },
+]

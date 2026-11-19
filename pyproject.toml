@@ -38,14 +38,33 @@ all = ["kaptive[plot,json]"]
 
 [dependency-groups]
 docs = [
-    "kaptive[plot,json]",
+    "kaptive[all]",
     "zensical",
     "mkdocstrings[python]",
     "deepl>=1.20",
 ]
+test = [
+    "kaptive[all]",
+    "pytest",
+    "pytest-testmon",
+    "pytest-xdist",
+    "pytest-cov",
+]
+typing = [
+    "kaptive[all]",
+    "ty",
+]
+lint = [
+    "kaptive[all]",
+    "ruff",
+    "prek",
+]
 dev = [
     "kaptive[all]",
     { include-group = "docs" },
+    { include-group = "test" },
+    { include-group = "typing" },
+    { include-group = "lint" },
 ]
 
 [project.urls]
@@ -85,27 +104,21 @@ preview = true
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "ANN", "E501"]
-"scripts/*" = ["D", "ANN", "E501", "UP031"]
-"src/kaptive/db/cli.py" = ["D400"]
-"src/kaptive/serotyping/cli.py" = ["D400", "ANN401"]
-"src/kaptive/core/alignment.py" = ["D401"]
-"src/kaptive/db/core.py" = ["E501", "D401", "UP037"]
-"src/kaptive/compare.py" = ["E501", "ANN401"]
-"src/kaptive/plotting.py" = ["E501", "ANN401", "ANN202", "ANN001"]
-"src/kaptive/serotyping/models.py" = ["E501", "D105", "ANN401"]
-"src/kaptive/cli.py" = ["ANN401", "PYI036"]
-"src/kaptive/client.py" = ["ANN401"]
-"src/kaptive/core/genome.py" = ["ANN401", "PYI036"]
-"src/kaptive/core/interval.py" = ["ANN401"]
-"src/kaptive/core/kmers.py" = ["ANN401"]
-"src/kaptive/core/pairwise.py" = ["ANN401"]
-"src/kaptive/db/manager.py" = ["ANN202"]
-"src/kaptive/db/models.py" = ["ANN401"]
+"scripts/*.py" = ["ANN", "B018"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ty.environment]
+python-version = "3.11"
 
 [tool.ty.rules]
 missing-type-argument = "error"
 possibly-unresolved-reference = "warn"
 
-[tool.karva.profile.default.coverage]
-branch = true
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+norecursedirs = [".venv", "dist", "build", "scripts", ".github", ".git", ".ruff_cache"]
+addopts = "-q --tb=short --show-capture=no -n auto --dist loadfile"

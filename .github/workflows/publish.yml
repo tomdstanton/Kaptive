@@ -25,11 +25,25 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
-      - name: Install just
-        uses: extractions/setup-just@v2
-      - name: Run CI
-        run: just ci
+          cache-dependency-glob: "uv.lock"
+
+      - name: Sync dependencies
+        run: uv sync --locked --dev
+
+      - name: Check formatting
+        run: uv run --no-sync ruff format --check .
+
+      - name: Lint
+        run: uv run --no-sync ruff check .
+
+      - name: Type check
+        run: uv run --no-sync ty check src/
+
+      - name: Check docs
+        run: uv run --no-sync zensical build --strict
+
+      - name: Run tests
+        run: uv run --no-sync pytest
 
   release-build:
     needs: test
@@ -45,11 +59,8 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install just
-        uses: extractions/setup-just@v2
-
       - name: Build release distributions
-        run: just build
+        run: uv build
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -79,9 +90,6 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install just
-        uses: extractions/setup-just@v2
-
       - name: Retrieve release distributions
         uses: actions/download-artifact@v4
         with:
@@ -89,7 +97,7 @@ jobs:
           path: dist/
 
       - name: Publish release distributions to PyPI
-        run: just publish
+        run: uv publish
 
   github-release:
     runs-on: ubuntu-latest

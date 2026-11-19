@@ -44,7 +44,7 @@ def main() -> None:
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
         print("Error: DEEPL_API_KEY environment variable is not set.")
-        print("Run with: DEEPL_API_KEY='your-key' just translate")
+        print("Run with: DEEPL_API_KEY='your-key' uv run scripts/translate_docs.py")
         exit(1)
 
     translator = deepl.Translator(api_key)

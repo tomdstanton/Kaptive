@@ -26,18 +26,20 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
+          cache-dependency-glob: "uv.lock"
 
-      - name: Install just
-        uses: extractions/setup-just@v2
-
-      - name: Install package and dependencies
-        run: just install
+      - name: Install dependencies
+        run: uv sync --locked --group docs
 
       - name: Build docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: just docs-build
+        run: |
+          uv run --no-sync scripts/generate_cli_docs.py
+          uv run --no-sync scripts/generate_release_notes.py
+          uv run --no-sync scripts/fetch_announcement.py
+          uv run --no-sync scripts/generate_api_docs.py
+          uv run --no-sync zensical build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
