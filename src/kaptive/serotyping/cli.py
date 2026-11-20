@@ -11,6 +11,8 @@ Classes:
     [`Convert`][kaptive.serotyping.cli.Convert]: Subcommand for converting serialized JSON-lines results.
 """
 
+from __future__ import annotations
+
 import argparse
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -107,7 +109,7 @@ class ResultExporter:
                 )
             )
 
-    def __call__(self, result: "SerotypingResult") -> None:
+    def __call__(self, result: SerotypingResult) -> None:
         r"""Pass the serotyping result to all registered output writers.
 
         Args:

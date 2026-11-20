@@ -6,6 +6,8 @@ parsers ([`HelpOnErrorParser`][kaptive.cli.HelpOnErrorParser]), the core applica
 ([`Cli`][kaptive.cli.Cli]), and the abstract command specification ([`Command`][kaptive.cli.Command]).
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -219,7 +221,7 @@ class Cli:
         )
         self._open_handles: list[IO[Any]] = []
 
-    def add_command(self, command: "Command") -> None:
+    def add_command(self, command: Command) -> None:
         r"""Build and attach top-level command to root CLI subparsers.
 
         Args:
