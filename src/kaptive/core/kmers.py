@@ -10,13 +10,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cache
-from typing import Any, NamedTuple, Self
+from typing import NamedTuple, Self, overload
 
 import numpy as np
 import numpy.typing as npt
-from numba import njit, prange
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core._numba import njit, prange
+from kaptive.core.collections import BatchIndex, RecordContainer, ScalarIndex
 from kaptive.core.interval import Intervals
 from kaptive.core.seq import Sequences
 
@@ -57,7 +57,7 @@ class Seed(NamedTuple):
 
 
 @dataclass(frozen=True, slots=True)
-class Seeds(BatchedContainer[Seed, "Seeds"]):
+class Seeds(RecordContainer[Seed]):
     r"""Structure-of-Arrays (SoA) batch container for alignment seeds.
 
     Stores query indices, target indices, scores, and diagonal offsets as 1D NumPy arrays.
@@ -82,7 +82,13 @@ class Seeds(BatchedContainer[Seed, "Seeds"]):
         """
         return len(self.query_indices)
 
-    def __getitem__(self, item: Any) -> Seed | Seeds:
+    @overload
+    def __getitem__(self, item: ScalarIndex) -> Seed: ...
+
+    @overload
+    def __getitem__(self, item: BatchIndex) -> Seeds: ...
+
+    def __getitem__(self, item: ScalarIndex | BatchIndex) -> Seed | Seeds:
         r"""Access seeds by integer index, slice, or boolean/integer NumPy array.
 
         Args:
@@ -121,7 +127,7 @@ class Seeds(BatchedContainer[Seed, "Seeds"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple [`Seeds`][kaptive.core.kmers.Seeds] collections into a single batch.
 
         Args:
@@ -132,7 +138,7 @@ class Seeds(BatchedContainer[Seed, "Seeds"]):
         """
         batches_list = list(batches)
         if not batches_list:
-            return cls.empty()  # type: ignore
+            return cls.empty()
         return cls(
             np.concatenate([b.query_indices for b in batches_list]),
             np.concatenate([b.target_indices for b in batches_list]),
@@ -141,7 +147,7 @@ class Seeds(BatchedContainer[Seed, "Seeds"]):
         )
 
     @classmethod
-    def empty(cls) -> Seeds:
+    def empty(cls) -> Self:
         r"""Create an empty [`Seeds`][kaptive.core.kmers.Seeds] collection.
 
         Returns:
@@ -270,7 +276,7 @@ class Seeds(BatchedContainer[Seed, "Seeds"]):
         Returns:
             tuple[Sequences, Sequences]: Paired query and target sequence collections.
         """
-        return queries[self.query_indices], targets[self.target_indices]  # type: ignore
+        return queries[self.query_indices], targets[self.target_indices]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -300,19 +306,6 @@ class BaseKmerIndex:
     @classmethod
     def empty(cls) -> BaseKmerIndex:
         r"""Create an empty BaseKmerIndex.
-
-        Raises:
-            NotImplementedError: Must be implemented by subclasses.
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def build(cls, batch: Sequences, **kwargs: Any) -> BaseKmerIndex:
-        r"""Build a k-mer index from a sequence collection.
-
-        Args:
-            batch (Sequences): Sequence collection to index.
-            **kwargs (Any): Subclass-specific options.
 
         Raises:
             NotImplementedError: Must be implemented by subclasses.
@@ -424,7 +417,6 @@ class FracMinHashIndex(BaseKmerIndex):
         sort_by_hash: bool = False,
         lut: npt.NDArray[np.uint8] | None = None,
         bits_per_char: int = 2,
-        **kwargs: Any,
     ) -> FracMinHashIndex:
         r"""Build a FracMinHashIndex from nucleotide sequence batch.
 
@@ -437,7 +429,6 @@ class FracMinHashIndex(BaseKmerIndex):
             sort_by_hash (bool): True to sort output records by hash. Defaults to False.
             lut (npt.NDArray[np.uint8] | None): Optional DNA lookup table.
             bits_per_char (int): Bits per character (2 for DNA).
-            **kwargs (Any): Additional parameters.
 
         Returns:
             FracMinHashIndex: Built [`FracMinHashIndex`][kaptive.core.kmers.FracMinHashIndex] instance.
@@ -578,7 +569,6 @@ class RandstrobeIndex(BaseKmerIndex):
         seed: int = 42,
         sort_by_hash: bool = False,
         lut: npt.NDArray[np.uint8] | None = None,
-        **kwargs: Any,
     ) -> RandstrobeIndex:
         r"""Build a RandstrobeIndex from sequence batch.
 
@@ -592,7 +582,6 @@ class RandstrobeIndex(BaseKmerIndex):
             seed (int): Random seed. Defaults to 42.
             sort_by_hash (bool): True to sort records by hash. Defaults to False.
             lut (npt.NDArray[np.uint8] | None): Optional alphabet lookup table.
-            **kwargs (Any): Additional parameters.
 
         Returns:
             RandstrobeIndex: Constructed [`RandstrobeIndex`][kaptive.core.kmers.RandstrobeIndex].
@@ -851,7 +840,7 @@ def _count_fracminhash_kernel(
     max_val = np.uint64(1) << np.uint64(bits_per_char)
     threshold = ~np.uint64(0) // np.uint64(scaled)
 
-    for idx in prange(n_seqs):  # type: ignore
+    for idx in prange(n_seqs):
         seq_len = lengths[idx]
         if seq_len < k:
             continue
@@ -924,7 +913,7 @@ def _populate_fracminhash_kernel(
     max_val = np.uint64(1) << np.uint64(bits_per_char)
     threshold = ~np.uint64(0) // np.uint64(scaled)
 
-    for idx in prange(n_seqs):  # type: ignore
+    for idx in prange(n_seqs):
         seq_len = lengths[idx]
         if seq_len < k:
             continue
@@ -985,7 +974,7 @@ def _pack_kernel(
         in_records (npt.NDArray): Input records array.
         out_records (npt.NDArray): Output records array.
     """
-    for idx in prange(len(counts)):  # type: ignore
+    for idx in prange(len(counts)):
         c = counts[idx]
         if c > 0:
             r = read_offsets[idx]
@@ -1020,7 +1009,7 @@ def _count_randstrobes_kernel(
     n_seqs = len(offsets)
     counts = np.zeros(n_seqs, dtype=np.uint32)
 
-    for idx in prange(n_seqs):  # type: ignore
+    for idx in prange(n_seqs):
         seq_len = lengths[idx]
         if seq_len < k:
             continue
@@ -1085,7 +1074,7 @@ def _populate_randstrobes_kernel(
     """
     n_seqs = len(offsets)
 
-    for idx in prange(n_seqs):  # type: ignore
+    for idx in prange(n_seqs):
         seq_len = lengths[idx]
         if seq_len < k:
             continue
@@ -1254,7 +1243,7 @@ def _intersect_top_hit_kernel(
     max_s = np.zeros(num_queries, dtype=np.uint32)
     offsets = np.zeros(num_queries, dtype=np.int32)
 
-    for q_idx in prange(num_queries):  # type: ignore
+    for q_idx in prange(num_queries):
         start, end = q_offsets[q_idx], q_offsets[q_idx + 1]
         if start == end:
             continue

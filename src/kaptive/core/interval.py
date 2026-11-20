@@ -12,13 +12,13 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import IntEnum
 from re import Match
-from typing import Any, Self
+from typing import Any, Self, TypeAlias, overload
 
 import numpy as np
 import numpy.typing as npt
-from numba import njit
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core._numba import njit
+from kaptive.core.collections import BatchIndex, RecordContainer, ScalarIndex
 
 
 # Enums ----------------------------------------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ class Interval:
         return Interval(length - self.end, length - self.start, Strand(self.strand * -1))
 
     @classmethod
-    def from_match(cls, item: Match, strand: Strand = Strand.UNSTRANDED) -> Interval:  # type: ignore
+    def from_match(cls, item: Match[Any], strand: Strand = Strand.UNSTRANDED) -> Interval:
         r"""Create an [`Interval`][kaptive.core.interval.Interval] from a regular expression match object.
 
         Args:
@@ -262,11 +262,11 @@ class Interval:
         raise TypeError(item)
 
 
-IntervalLike = slice | int | Match | Interval
+IntervalLike: TypeAlias = slice | int | Match[Any] | Interval
 
 
 @dataclass(frozen=True, slots=True)
-class Intervals(BatchedContainer[Interval, "Intervals"]):
+class Intervals(RecordContainer[Interval]):
     r"""A high-performance Structure-of-Arrays (SoA) collection of genomic intervals.
 
     Stores starts, ends, strands, and original tracking indices as parallel 1D NumPy arrays
@@ -290,7 +290,7 @@ class Intervals(BatchedContainer[Interval, "Intervals"]):
             object.__setattr__(self, "original_indices", np.arange(len(self.starts), dtype=np.int32))
 
     @classmethod
-    def empty(cls) -> Intervals:
+    def empty(cls) -> Self:
         r"""Create an empty [`Intervals`][kaptive.core.interval.Intervals] object with zero-length arrays.
 
         Returns:
@@ -333,16 +333,16 @@ class Intervals(BatchedContainer[Interval, "Intervals"]):
         """
         return len(self.starts)
 
-    def to_dict(self) -> dict[str, list]:  # type: ignore
+    def to_dict(self) -> dict[str, list[int]]:
         r"""Serialize the interval batch into a dictionary of python lists.
 
         Returns:
-            dict[str, list]: Dictionary containing `'starts'`, `'ends'`, and `'strands'`.
+            dict[str, list[int]]: Dictionary containing `'starts'`, `'ends'`, and `'strands'`.
         """
         return {"starts": self.starts.tolist(), "ends": self.ends.tolist(), "strands": self.strands.tolist()}
 
     @classmethod
-    def from_dict(cls, d: dict) -> Intervals:  # type: ignore
+    def from_dict(cls, d: dict[str, Any]) -> Self:
         r"""Deserialize an [`Intervals`][kaptive.core.interval.Intervals] collection from a dictionary.
 
         Args:
@@ -357,7 +357,13 @@ class Intervals(BatchedContainer[Interval, "Intervals"]):
             np.array(d["strands"], dtype=np.int8),
         )
 
-    def __getitem__(self, item: Any) -> Interval | Intervals:
+    @overload
+    def __getitem__(self, item: ScalarIndex) -> Interval: ...
+
+    @overload
+    def __getitem__(self, item: BatchIndex) -> Intervals: ...
+
+    def __getitem__(self, item: ScalarIndex | BatchIndex) -> Interval | Intervals:
         r"""Access intervals by integer index, slice, or boolean/integer NumPy array.
 
         Args:
@@ -385,7 +391,7 @@ class Intervals(BatchedContainer[Interval, "Intervals"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple [`Intervals`][kaptive.core.interval.Intervals] collections into a single batch.
 
         Args:
@@ -409,7 +415,11 @@ class Intervals(BatchedContainer[Interval, "Intervals"]):
             else None,
         )
 
-    def shift(self, x: int | npt.NDArray[np.int32], y: int | npt.NDArray[np.int32] | None = None) -> Intervals:
+    def shift(
+        self,
+        x: int | np.integer[Any] | npt.NDArray[np.int32],
+        y: int | np.integer[Any] | npt.NDArray[np.int32] | None = None,
+    ) -> Intervals:
         r"""Vectorized coordinate shift of all intervals in the collection.
 
         Args:

@@ -17,13 +17,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cache
-from typing import Any, Self
+from typing import Any, Self, overload
 
 import numpy as np
 import numpy.typing as npt
-from numba import njit, prange
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core._numba import njit, prange
+from kaptive.core.collections import BatchIndex, RecordContainer, ScalarIndex
 from kaptive.core.kmers import Seeds
 from kaptive.core.seq import Sequences
 
@@ -74,7 +74,7 @@ class PairwiseAlignment:
 
 
 @dataclass(frozen=True, slots=True)
-class PairwiseAlignments(BatchedContainer["PairwiseAlignment", "PairwiseAlignments"]):
+class PairwiseAlignments(RecordContainer["PairwiseAlignment"]):
     r"""A high-performance SoA container for the results of multiple pairwise alignments.
 
     This class stores alignment statistics in a Structure-of-Arrays (SoA) layout using 1D NumPy arrays.
@@ -145,7 +145,13 @@ class PairwiseAlignments(BatchedContainer["PairwiseAlignment", "PairwiseAlignmen
             np.array(d["t_ends"], dtype=np.int32),
         )
 
-    def __getitem__(self, item: Any) -> PairwiseAlignment | PairwiseAlignments:
+    @overload
+    def __getitem__(self, item: ScalarIndex) -> PairwiseAlignment: ...
+
+    @overload
+    def __getitem__(self, item: BatchIndex) -> PairwiseAlignments: ...
+
+    def __getitem__(self, item: ScalarIndex | BatchIndex) -> PairwiseAlignment | PairwiseAlignments:
         r"""Access alignment results by index, slice, or boolean array mask.
 
         Args:
@@ -184,7 +190,7 @@ class PairwiseAlignments(BatchedContainer["PairwiseAlignment", "PairwiseAlignmen
         )
 
     @classmethod
-    def empty(cls) -> PairwiseAlignments:
+    def empty(cls) -> Self:
         r"""Create an empty PairwiseAlignments collection with zero-length int32 arrays.
 
         Returns:
@@ -202,7 +208,7 @@ class PairwiseAlignments(BatchedContainer["PairwiseAlignment", "PairwiseAlignmen
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple PairwiseAlignments collections into a single batch.
 
         Args:
@@ -213,7 +219,7 @@ class PairwiseAlignments(BatchedContainer["PairwiseAlignment", "PairwiseAlignmen
         """
         batches_list = list(batches)
         if not batches_list:
-            return cls.empty()  # type: ignore
+            return cls.empty()
         return cls(
             scores=np.concatenate([b.scores for b in batches_list]),
             matches=np.concatenate([b.matches for b in batches_list]),
@@ -439,7 +445,7 @@ def _batched_banded_gotoh(
         out_t_starts (npt.NDArray[np.int32]): Output array for target start coordinates.
         out_t_ends (npt.NDArray[np.int32]): Output array for target end coordinates.
     """
-    for idx in prange(len(q_offsets)):  # type: ignore
+    for idx in prange(len(q_offsets)):
         seq1 = q_data[q_offsets[idx] : q_offsets[idx] + q_lengths[idx]]
         seq2 = t_data[t_offsets[idx] : t_offsets[idx] + t_lengths[idx]]
 

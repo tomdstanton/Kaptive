@@ -11,11 +11,14 @@ import os
 import re
 import sys
 from abc import ABC
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator, Sized
 from pathlib import Path
-from typing import IO, Any, Self
+from types import TracebackType
+from typing import IO, Any, Literal, Never, Self, TypeVar, overload
 
 from kaptive import __version__
+
+_T = TypeVar("_T")
 
 
 # Classes --------------------------------------------------------------------------------------------------------------
@@ -78,7 +81,7 @@ class KaptiveHelpFormatter(argparse.RawTextHelpFormatter):
         self,
         usage: str | None,
         actions: Iterable[argparse.Action],
-        groups: Iterable[argparse._ArgumentGroup],
+        groups: Iterable[argparse._MutuallyExclusiveGroup],
         prefix: str | None,
     ) -> str:
         r"""Format usage syntax string with ANSI color highlights.
@@ -94,7 +97,7 @@ class KaptiveHelpFormatter(argparse.RawTextHelpFormatter):
         """
         # Filter out optional actions to cleanly generate the positional usage string
         positionals = [a for a in actions if not a.option_strings]
-        result = super()._format_usage(usage, positionals, groups, prefix)  # type: ignore
+        result = super()._format_usage(usage, positionals, groups, prefix)
 
         # Replace the subcommand set {add,install,...} with [subcommand]
         result = re.sub(r"\{[a-zA-Z0-9_,\.-]+\}", Colors.wrap("[subcommand]", Colors.BOLD_CYAN), result)
@@ -147,7 +150,7 @@ class HelpOnErrorParser(argparse.ArgumentParser):
     `sys.stderr` when invalid arguments or choices are encountered, suggesting close matches.
     """
 
-    def error(self, message: str) -> None:  # type: ignore
+    def error(self, message: str) -> Never:
         r"""Print help text and error message before terminating CLI session.
 
         Args:
@@ -214,7 +217,7 @@ class Cli:
         self.subparsers = self.parser.add_subparsers(
             title=Colors.wrap("💬 Commands", Colors.BOLD), dest="command", required=True
         )
-        self._open_handles: list[IO] = []  # type: ignore
+        self._open_handles: list[IO[Any]] = []
 
     def add_command(self, command: "Command") -> None:
         r"""Build and attach top-level command to root CLI subparsers.
@@ -261,7 +264,7 @@ class Cli:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: Any | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         r"""Exit context manager scope and clean up allocated resources.
 
@@ -288,7 +291,7 @@ class Cli:
             print(f"📄 File not found: {exc_val}", file=sys.stderr)
             sys.exit(1)
 
-    def exit(self, msg: str, code: int = 1) -> None:
+    def exit(self, msg: str, code: int = 1) -> Never:
         r"""Print error message to stderr and terminate process.
 
         Args:
@@ -312,17 +315,26 @@ class Cli:
                 handle.close()
         self._open_handles.clear()
 
-    def msg(self, msg: str | None, **kwargs: Any) -> None:
+    def msg(
+        self,
+        msg: str | None,
+        *,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        flush: bool = False,
+    ) -> None:
         r"""Print informational message to stderr if verbose mode is enabled.
 
         Args:
             msg (str | None): Message string to print.
-            **kwargs (Any): Additional keyword arguments passed to `print`.
+            sep (str | None): String inserted between values. Defaults to `" "`.
+            end (str | None): String appended after the message. Defaults to `"\n"`.
+            flush (bool): Whether to forcibly flush the stream. Defaults to `False`.
         """
         if self.verbose:
-            print(msg, file=sys.stderr, **kwargs)
+            print(msg, sep=sep, end=end, file=sys.stderr, flush=flush)
 
-    def progress(self, iterable: Iterable, msg: str) -> Iterable:  # type: ignore
+    def progress(self, iterable: Iterable[_T], msg: str) -> Iterator[_T]:
         r"""Wrap iterable to display live progress counter on stderr when verbose mode is active.
 
         Args:
@@ -332,10 +344,7 @@ class Cli:
         Returns:
             Iterable: Generator yielding items from original iterable while rendering progress.
         """
-        try:
-            total = len(iterable)  # type: ignore
-        except TypeError:
-            total = "?"
+        total: int | str = len(iterable) if isinstance(iterable, Sized) else "?"
 
         for i, item in enumerate(iterable, start=1):
             if self.verbose:
@@ -345,7 +354,13 @@ class Cli:
         if self.verbose:
             print(file=sys.stderr)
 
-    def open_file(self, file: str, mode: str = "rb") -> IO:  # type: ignore
+    @overload
+    def open_file(self, file: str, mode: Literal["rb", "wb", "ab", "r+b", "w+b"] = "rb") -> IO[bytes]: ...
+
+    @overload
+    def open_file(self, file: str, mode: Literal["r", "w", "a", "rt", "wt", "at", "r+", "w+"]) -> IO[str]: ...
+
+    def open_file(self, file: str, mode: str = "rb") -> IO[Any]:
         r"""Open file path or return standard stdout stream handle with tracking.
 
         Args:
@@ -374,9 +389,9 @@ class Command(ABC):
         aliases (list[str]): Alternative trigger names or abbreviations for command.
         description (str): Detailed text explanation shown in command help.
         help_text (str): Brief single-line summary shown in parent subparser tables.
-        parser (argparse.ArgumentParser | None): Bound argument parser instance.
+        parser (argparse.ArgumentParser): Bound argument parser instance.
         subcommands (list[Command]): Child subcommand instances.
-        cli (Cli | None): Parent root CLI host application reference.
+        cli (Cli): Parent root CLI host application reference.
     """
 
     name: str = ""
@@ -386,9 +401,9 @@ class Command(ABC):
 
     def __init__(self) -> None:
         r"""Initialize command instance and populate metadata attributes."""
-        self.parser: argparse.ArgumentParser | None = None
+        self._parser: argparse.ArgumentParser | None = None
         self.subcommands: list[Command] = []
-        self.cli: Cli | None = None
+        self._cli: Cli | None = None
 
         # Auto-populate name from the class name
         if not self.name:
@@ -396,14 +411,50 @@ class Command(ABC):
 
         # Auto-populate description from class docstring
         if not self.description:
-            if type(self).__doc__ and type(self).__doc__ != Command.__doc__:
-                self.description = type(self).__doc__  # type: ignore
+            if (doc := type(self).__doc__) and doc != Command.__doc__:
+                self.description = doc
 
         # Auto-populate short help text from the first line of the description
         if not self.help_text and self.description:
             self.help_text = self.description.strip().split("\n")[0]
 
         self.register_subcommands()
+
+    @property
+    def parser(self) -> argparse.ArgumentParser:
+        r"""Bound argument parser for this command.
+
+        Returns:
+            argparse.ArgumentParser: Bound parser created during `build()`.
+
+        Raises:
+            RuntimeError: If accessed before `build()` has wired the parser.
+        """
+        if self._parser is None:
+            raise RuntimeError(f"Command '{self.name}' has no parser yet; call build() first.")
+        return self._parser
+
+    @parser.setter
+    def parser(self, value: argparse.ArgumentParser) -> None:
+        self._parser = value
+
+    @property
+    def cli(self) -> Cli:
+        r"""Root CLI application bound to this command.
+
+        Returns:
+            Cli: Parent root CLI host application.
+
+        Raises:
+            RuntimeError: If accessed before `Cli.add_command()` has bound this command.
+        """
+        if self._cli is None:
+            raise RuntimeError(f"Command '{self.name}' is not bound to a Cli instance.")
+        return self._cli
+
+    @cli.setter
+    def cli(self, value: Cli) -> None:
+        self._cli = value
 
     def register_subcommands(self) -> None:
         r"""Register child subcommand instances into `subcommands` list."""
@@ -513,7 +564,7 @@ class Command(ABC):
 
     def build(
         self,
-        subparsers: argparse._SubParsersAction,  # type: ignore
+        subparsers: argparse._SubParsersAction[Any],
         parent_parsers: list[argparse.ArgumentParser] | None = None,
     ) -> None:
         r"""Wire command parser and subcommands into parent argparse hierarchy.
@@ -564,7 +615,8 @@ class Command(ABC):
                 child_parents.append(shared)
 
             for cmd in self.subcommands:
-                cmd.cli = self.cli
+                if self._cli is not None:
+                    cmd.cli = self._cli
                 cmd.build(sub_action, parent_parsers=child_parents)
 
 

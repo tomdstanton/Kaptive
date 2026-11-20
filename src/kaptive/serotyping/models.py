@@ -12,7 +12,7 @@ Classes:
     [`SerotypingResult`][kaptive.serotyping.models.SerotypingResult]: Complete immutable serotyping result record.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag, auto
 from typing import TYPE_CHECKING, Any, ClassVar, Self
@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self
 import numpy as np
 import numpy.typing as npt
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core.collections import BatchedContainer, BatchIndex
 from kaptive.core.interval import Intervals
 from kaptive.core.seq import Sequences
 
@@ -94,7 +94,7 @@ SerotypingProblem.SYMBOLS = tuple(
 
 # Classes --------------------------------------------------------------------------------------------------------------
 @dataclass(slots=True, frozen=True)
-class GeneHits(BatchedContainer[Any, "GeneHits"]):
+class GeneHits(BatchedContainer):
     r"""A high-performance SoA container for classified gene alignments.
 
     Encapsulates parallel NumPy arrays and metadata tuples for gene alignments, enabling
@@ -116,7 +116,8 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
         expected_strands (npt.NDArray[np.int8]): Expected strand orientations (+1 or -1).
         gene_ids (npt.NDArray[np.bytes_]): 1D byte string array (`S32`) of gene identifier strings.
         cluster_names (npt.NDArray[np.bytes_]): 1D byte string array (`S10`) of gene cluster or family names.
-        product_descriptions (npt.NDArray[np.bytes_]): 1D byte string array (`S64`) of functional gene product annotations.
+        product_descriptions (npt.NDArray[np.bytes_]): 1D byte string array (`S64`) of functional gene
+            product annotations.
         coverages (npt.NDArray[np.float32]): Gene alignment coverage proportions.
     """
 
@@ -138,6 +139,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
     coverages: npt.NDArray[np.float32]
 
     def __post_init__(self) -> None:
+        r"""Normalize string metadata fields into fixed-width UTF-8 byte arrays."""
         for field_name, dtype in (
             ("gene_ids", "S32"),
             ("cluster_names", "S10"),
@@ -156,7 +158,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
                 object.__setattr__(self, field_name, arr)
 
     @classmethod
-    def empty(cls) -> "GeneHits":
+    def empty(cls) -> Self:
         r"""Create an empty `GeneHits` container with zero-length arrays and empty tuples.
 
         Returns:
@@ -182,7 +184,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple `GeneHits` batches into a single container.
 
         Args:
@@ -193,7 +195,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
         """
         batches_list = list(batches)
         if not batches_list:
-            return cls.empty()  # type: ignore
+            return cls.empty()
         return cls(
             gene_indices=np.concatenate([b.gene_indices for b in batches_list]),
             q_starts=np.concatenate([b.q_starts for b in batches_list]),
@@ -221,7 +223,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
         """
         return len(self.gene_indices)
 
-    def __getitem__(self, item: Any) -> "GeneHits":
+    def __getitem__(self, item: BatchIndex) -> "GeneHits":
         r"""Slice or boolean-mask all parallel array fields simultaneously.
 
         Args:
@@ -307,7 +309,10 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
             GeneHits: Reconstructed [`GeneHits`][kaptive.serotyping.models.GeneHits] instance.
         """
 
-        def _to_bytes_array(val: Any, dtype: str) -> npt.NDArray[np.bytes_]:
+        def _to_bytes_array(
+            val: Sequence[str | bytes] | npt.NDArray[Any] | None,
+            dtype: str,
+        ) -> npt.NDArray[np.bytes_]:
             if val is None or len(val) == 0:
                 return np.empty(0, dtype=dtype)
             if isinstance(val, np.ndarray) and val.dtype.kind in ("S", "a"):
@@ -365,7 +370,7 @@ class GeneHits(BatchedContainer[Any, "GeneHits"]):
 
 
 @dataclass(slots=True, frozen=True)
-class LocusPieces(BatchedContainer[Any, "LocusPieces"]):
+class LocusPieces(BatchedContainer):
     r"""A high-performance SoA container for bounding coordinates of locus fragments.
 
     Stores contig indices, coordinate spans, and strand directions for locus pieces when a locus
@@ -392,7 +397,7 @@ class LocusPieces(BatchedContainer[Any, "LocusPieces"]):
         """
         return len(self.ctg_indices)
 
-    def __getitem__(self, item: int | slice | npt.NDArray[Any] | list[int]) -> "Any | LocusPieces":
+    def __getitem__(self, item: BatchIndex) -> "LocusPieces":
         r"""Slice or array-mask all parallel fields of locus pieces simultaneously.
 
         Args:
@@ -414,7 +419,7 @@ class LocusPieces(BatchedContainer[Any, "LocusPieces"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple `LocusPieces` batches into a single container.
 
         Args:
@@ -426,7 +431,7 @@ class LocusPieces(BatchedContainer[Any, "LocusPieces"]):
         """
         batches_list = list(batches)
         if not batches_list:
-            return cls.empty()  # type: ignore
+            return cls.empty()
         return cls(
             ctg_indices=np.concatenate([b.ctg_indices for b in batches_list]),
             starts=np.concatenate([b.starts for b in batches_list]),
@@ -435,7 +440,7 @@ class LocusPieces(BatchedContainer[Any, "LocusPieces"]):
         )
 
     @classmethod
-    def empty(cls) -> "LocusPieces":
+    def empty(cls) -> Self:
         r"""Create an empty `LocusPieces` container with zero-length arrays.
 
         Returns:
@@ -536,6 +541,7 @@ class SerotypingResult:
     problems: SerotypingProblem = field(init=False)
 
     def __post_init__(self) -> None:
+        r"""Compute and assign quality bitflags (`problems`) from locus pieces and gene states."""
         p = SerotypingProblem.NONE
         if len(self.locus_pieces) > 1:
             p |= SerotypingProblem.FRAGMENTED
@@ -611,9 +617,9 @@ class SerotypingResult:
         )
 
         return LocusData(
-            proteins=self.translations[mask],  # type: ignore
+            proteins=self.translations[mask],
             name=self.genome,
-            backbone=self.gene_hits.t_intervals[mask],  # type: ignore
+            backbone=self.gene_hits.t_intervals[mask],
             pieces=self.locus_pieces,
             gene_ctg_indices=self.gene_hits.t_indices[mask],
             gene_states=self.gene_states[mask],

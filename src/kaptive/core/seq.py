@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterable
 from dataclasses import dataclass
-from typing import Any, Self
+from typing import Any, Self, overload
 
 import numpy as np
 import numpy.typing as npt
-from numba import njit, prange
 
-from kaptive.core.collections import RaggedArrayContainer
+from kaptive.core._numba import njit, prange
+from kaptive.core.collections import BatchIndex, RaggedArrayContainer, ScalarIndex
 from kaptive.core.interval import Interval, IntervalLike, Intervals, Strand
 
 
@@ -58,6 +58,12 @@ class SeqRecord:
         """
         return b">%b\n%b\n" % (self.id.encode(), self.seq)
 
+    @overload
+    def extract(self, start: IntervalLike, end: None = None, strand: Strand = Strand.UNSTRANDED) -> bytes: ...
+
+    @overload
+    def extract(self, start: int, end: int, strand: Strand = Strand.UNSTRANDED) -> bytes: ...
+
     def extract(self, start: int | IntervalLike, end: int | None = None, strand: Strand = Strand.UNSTRANDED) -> bytes:
         r"""Extract a sub-sequence based on coordinates and orientation.
 
@@ -78,8 +84,10 @@ class SeqRecord:
         if end is None:
             interval = Interval.from_item(start, strand=strand)
             start_val, end_val, strand_val = interval.start, interval.end, interval.strand
+        elif isinstance(start, (int, np.integer)):
+            start_val, end_val, strand_val = int(start), int(end), strand
         else:
-            start_val, end_val, strand_val = int(start), int(end), strand  # type: ignore
+            raise TypeError("start must be an integer when end is provided")
 
         new_seq = self.seq[start_val:end_val]
         if strand_val < 0:
@@ -88,7 +96,7 @@ class SeqRecord:
 
 
 @dataclass(frozen=True, slots=True)
-class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
+class Sequences(RaggedArrayContainer["SeqRecord"]):
     r"""A high-performance SoA container for biological sequences.
 
     Stores multiple sequences in a flat, contiguous memory layout using a 1D NumPy array
@@ -175,7 +183,7 @@ class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
             )
 
     @classmethod
-    def empty(cls) -> Sequences:
+    def empty(cls) -> Self:
         r"""Create an empty Sequences object with zero-length arrays.
 
         Returns:
@@ -189,7 +197,7 @@ class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Sequences:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Sequences:
         r"""Concatenate multiple Sequences containers into a single larger collection.
 
         Args:
@@ -239,9 +247,15 @@ class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
         _, unique_indices = np.unique(hashes, return_index=True)
         unique_indices.sort()
 
-        return self[unique_indices]  # type: ignore
+        return self[unique_indices]
 
-    def __getitem__(self, item: int | slice | np.ndarray[Any, Any] | list[int]) -> SeqRecord | Sequences:
+    @overload
+    def __getitem__(self, item: ScalarIndex) -> SeqRecord: ...
+
+    @overload
+    def __getitem__(self, item: BatchIndex) -> Sequences: ...
+
+    def __getitem__(self, item: ScalarIndex | BatchIndex) -> SeqRecord | Sequences:
         r"""Access sequences by index, slice, or boolean mask.
 
         Args:
@@ -326,7 +340,7 @@ class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
 
     def extract(
         self,
-        indices: npt.NDArray[np.int32],
+        indices: npt.NDArray[np.integer[Any]],
         starts: npt.NDArray[np.int32],
         ends: npt.NDArray[np.int32],
         strands: npt.NDArray[np.int8],
@@ -378,7 +392,7 @@ class Sequences(RaggedArrayContainer["SeqRecord", "Sequences"]):
             new_ids=new_ids,
         )
 
-    def translate(self, frames: npt.NDArray[np.int8] | None = None, to_stop: bool = False) -> Sequences:
+    def translate(self, frames: npt.NDArray[np.integer[Any]] | None = None, to_stop: bool = False) -> Sequences:
         r"""Vectorized translation of nucleotide sequences into protein sequences.
 
         Translates sequences according to NCBI Translation Table 11 (Bacterial, Archaeal, and Plant Plastid Code)
@@ -555,7 +569,7 @@ def _hash_sequences_kernel(
     """
     n = len(offsets)
     hashes = np.zeros(n, dtype=np.uint64)
-    for i in prange(n):  # type: ignore
+    for i in prange(n):
         s = offsets[i]
         length_val = lengths[i]
         h = np.uint64(14695981039346656037)  # FNV offset basis
@@ -600,7 +614,7 @@ def _translate_kernel(
         n_codons = max_codons
 
     out = np.empty(n_codons, dtype=np.uint8)
-    for i in prange(n_codons):  # type: ignore
+    for i in prange(n_codons):
         c1 = char_map[seq_arr[i * 3]]
         c2 = char_map[seq_arr[i * 3 + 1]]
         c3 = char_map[seq_arr[i * 3 + 2]]
@@ -613,7 +627,7 @@ def _translate_kernel(
 def _extract_ragged_kernel(
     seqs: npt.NDArray[np.uint8],
     offsets: npt.NDArray[np.int32],
-    indices: npt.NDArray[np.int32],
+    indices: npt.NDArray[np.integer[Any]],
     starts: npt.NDArray[np.int32],
     ends: npt.NDArray[np.int32],
     strands: npt.NDArray[np.int8],
@@ -648,7 +662,7 @@ def _extract_ragged_kernel(
             out_offsets[i] = out_offsets[i - 1] + out_lengths[i - 1]
 
     out_seqs = np.empty(total_len, dtype=seqs.dtype)
-    for i in prange(n):  # type: ignore
+    for i in prange(n):
         length_val = out_lengths[i]
         if length_val == 0:
             continue
@@ -673,7 +687,7 @@ def _translate_ragged_kernel(
     seqs: npt.NDArray[np.uint8],
     offsets: npt.NDArray[np.int32],
     lengths: npt.NDArray[np.int32],
-    frames: npt.NDArray[np.int8],
+    frames: npt.NDArray[np.integer[Any]],
     char_map: npt.NDArray[np.uint8],
     codon_map: npt.NDArray[np.uint8],
     to_stop: bool,
@@ -725,7 +739,7 @@ def _translate_ragged_kernel(
             out_offsets[i] = out_offsets[i - 1] + out_lengths[i - 1]
 
     out_data = np.empty(total_len, dtype=np.uint8)
-    for i in prange(n):  # type: ignore
+    for i in prange(n):
         n_codons = out_lengths[i]
         if n_codons == 0:
             continue
@@ -757,7 +771,7 @@ def _internal_stops_kernel(
     """
     n = len(offsets)
     out = np.zeros(n, dtype=np.bool_)
-    for i in prange(n):  # type: ignore
+    for i in prange(n):
         s = offsets[i]
         length_val = lengths[i]
         if length_val > 0:  # Check up to the second-to-last character (s + length_val - 1)

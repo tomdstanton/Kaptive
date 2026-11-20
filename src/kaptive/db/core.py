@@ -98,14 +98,16 @@ class Database:
     loci_sketches: "FracMinHashIndex"
 
     def get_locus_data(self, locus_name: str) -> "LocusData":
-        r"""Extracts locus data including protein sequences, coordinate backbone, gene states, and product descriptions for a specific locus.
+        r"""Extracts locus data for a specific locus.
+
+        Includes protein sequences, coordinate backbone, gene states, and product descriptions.
 
         Args:
             locus_name (str): Identifier of the locus sequence (e.g., 'K1').
 
         Returns:
-            LocusData: Container object populated with locus proteins, coordinate backbone, gene states, and product descriptions
-                ([`LocusData`][kaptive.compare.LocusData]).
+            LocusData: Container object populated with locus proteins, coordinate backbone,
+                gene states, and product descriptions ([`LocusData`][kaptive.compare.LocusData]).
 
         Raises:
             ValueError: If `locus_name` is not present in `self.loci.ids`.
@@ -131,9 +133,9 @@ class Database:
         states = np.full(length, GeneState.NORMAL.value, dtype=np.int8)
 
         return LocusData(
-            proteins=self.translations[start : start + length],  # type: ignore
+            proteins=self.translations[start : start + length],
             name=locus_name,
-            backbone=self.gene_intervals[start : start + length],  # type: ignore
+            backbone=self.gene_intervals[start : start + length],
             pieces=None,
             gene_ctg_indices=None,
             gene_states=states,
@@ -317,6 +319,7 @@ class Database:
                 `.toml` metadata file is missing.
         """
         file = cls._check_file(file)
+        from gb_io import Between, Complement, Range
         from gb_io import iter as GenbankIterator
 
         _LOCUS_REGEX = re_compile(r"locus:\s?(.*)$")
@@ -345,26 +348,28 @@ class Database:
             for rec in GenbankIterator(fh):
                 locus_name, serotype, extra = None, None, False
 
-                if not (notes := [i.value for i in rec.features[0].qualifiers if i.key == "note"]):
+                if not (
+                    notes := [i.value for i in rec.features[0].qualifiers if i.key == "note" and i.value is not None]
+                ):
                     raise DatabaseError(f'Locus has no "note" qualifiers: {rec.name}')
 
                 # Iterate over notes to extract locus and type names, or whether the locus is an "Extra genes" locus
                 for note in notes:
-                    if match := _EXTRA_REGEX.search(note):  # type: ignore
+                    if match := _EXTRA_REGEX.search(note):
                         extra = True
                         locus_name = match.group(1)
                         break
 
-                    if not locus_name and (match := _LOCUS_REGEX.search(note)):  # type: ignore
+                    if not locus_name and (match := _LOCUS_REGEX.search(note)):
                         locus_name = match.group(1)
 
-                    if not serotype and (match := _SEROTYPE_REGEX.search(note)):  # type: ignore
+                    if not serotype and (match := _SEROTYPE_REGEX.search(note)):
                         serotype = match.group(1)
 
                 if not locus_name:
                     raise DatabaseError(f'Locus has no valid "locus" qualifiers: {rec.name}')
 
-                locus_record = SeqRecord(locus_name, rec.sequence.upper())  # type: ignore
+                locus_record = SeqRecord(locus_name, bytes(rec.sequence.upper()))
 
                 # Local trackers for the current locus
                 starts, ends, strands = [], [], []
@@ -378,9 +383,9 @@ class Database:
 
                     cluster, description = "", ""
                     for i in feat.qualifiers:
-                        if not cluster and i.key == "gene":
+                        if not cluster and i.key == "gene" and i.value is not None:
                             cluster = i.value
-                        if not description and i.key == "product":
+                        if not description and i.key == "product" and i.value is not None:
                             description = i.value
 
                     if not extra:
@@ -398,10 +403,22 @@ class Database:
 
                     expected_pos = local_gene_idx + 1  # Standardizing biological position
 
-                    # Coordinate parsing
+                    # Coordinate parsing (only contiguous Range/Between or Complement thereof)
                     loc = feat.location
-                    start, end = sorted((loc.start, loc.end))  # type: ignore
-                    strand_val = -1 if loc.strand in (-1, "-") else 1  # type: ignore
+                    if isinstance(loc, Complement):
+                        if not isinstance(loc.location, (Range, Between)):
+                            raise DatabaseError(
+                                f"Unsupported non-contiguous CDS location in {locus_name} ({gene_id}): {loc!r}"
+                            )
+                        start, end = sorted((loc.start, loc.end))
+                        strand_val = -1
+                    elif isinstance(loc, (Range, Between)):
+                        start, end = sorted((loc.start, loc.end))
+                        strand_val = -1 if loc.strand == "-" else 1
+                    else:
+                        raise DatabaseError(
+                            f"Unsupported non-contiguous CDS location in {locus_name} ({gene_id}): {loc!r}"
+                        )
 
                     # Append to flat gene arrays
                     starts.append(start)

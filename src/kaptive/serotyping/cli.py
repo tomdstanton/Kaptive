@@ -12,9 +12,13 @@ Classes:
 """
 
 import argparse
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from kaptive.cli import Cli, Colors, Command
+
+if TYPE_CHECKING:
+    from kaptive.serotyping.models import SerotypingResult
 
 
 class ResultExporter:
@@ -26,7 +30,7 @@ class ResultExporter:
 
     Attributes:
         file_suffix (str): Default filename suffix used when writing output files (default: `'kaptive_results'`).
-        writers (list[Callable[[SerotypingResult], None]]): List of registered writer callback functions.
+        writers (list[Callable[[SerotypingResult], object]]): List of registered writer callback functions.
     """
 
     file_suffix = "kaptive_results"
@@ -49,7 +53,7 @@ class ResultExporter:
             SystemExit: If `--json` is set but `orjson` is not installed, or `--plots`
                 is set but `plotly` is not installed.
         """
-        self.writers = []
+        self.writers: list[Callable[[SerotypingResult], object]] = []
 
         if tsv_file := getattr(args, "out", getattr(args, "tsv", None)):
             from kaptive.serotyping import KaptiveRow
@@ -103,7 +107,7 @@ class ResultExporter:
                 )
             )
 
-    def __call__(self, result: Any) -> None:
+    def __call__(self, result: "SerotypingResult") -> None:
         r"""Pass the serotyping result to all registered output writers.
 
         Args:
@@ -131,7 +135,7 @@ class Type(Command):
         `add_output_arguments`, confidence options,
         and thread count parameters.
         """
-        opts = self.parser.add_argument_group(Colors.wrap("📥 Inputs", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("📥 Inputs", Colors.BOLD))
         opts.add_argument("database", help="Database path or keyword (see: `kaptive db list`)")
         opts.add_argument(
             "genomes",
@@ -139,10 +143,10 @@ class Type(Command):
             help="Genome assemblies in fasta format; can be compressed",
         )
 
-        opts = self.parser.add_argument_group(Colors.wrap("📤 Outputs", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("📤 Outputs", Colors.BOLD))
         self.add_output_arguments(opts, tsv_flags=("-o", "--out"), include_json=True)
 
-        opts = self.parser.add_argument_group(Colors.wrap("🔬 Confidence options", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("🔬 Confidence options", Colors.BOLD))
         opts.add_argument(
             "--max-other-genes",
             type=int,
@@ -163,7 +167,7 @@ class Type(Command):
             help="Typeable if any genes in locus are below threshold (default: False)",
         )
 
-        opts = self.parser.add_argument_group(Colors.wrap("🔧 Other options", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("🔧 Other options", Colors.BOLD))
         opts.add_argument(
             "-t",
             "--threads",
@@ -189,12 +193,12 @@ class Type(Command):
         Args:
             args (argparse.Namespace): Parsed command-line arguments.
         """
-        self.cli.msg(f"💽 Loading database {args.database}...")  # type: ignore
+        self.cli.msg(f"💽 Loading database {args.database}...")
         from kaptive.db import DatabaseManager
         from kaptive.serotyping import Serotyper
 
         db = DatabaseManager.get(args.database)
-        exporter = ResultExporter(self.cli, args)  # type: ignore
+        exporter = ResultExporter(self.cli, args)
 
         serotyper = Serotyper(
             db=db,
@@ -203,11 +207,11 @@ class Type(Command):
             allow_below_threshold=args.below_threshold,
             partial_edge_tolerance=args.partial_edge_tolerance,
         )
-        for genome in self.cli.progress(args.genomes, "💉 Serotyping genomes..."):  # type: ignore
+        for genome in self.cli.progress(args.genomes, "💉 Serotyping genomes..."):
             if result := serotyper(genome):
                 exporter(result)
 
-        self.cli.msg(f"✅ Serotyping complete. Results written to '{args.out}'.")  # type: ignore
+        self.cli.msg(f"✅ Serotyping complete. Results written to '{args.out}'.")
 
 
 # Client command -------------------------------------------------------------------------------------------------------
@@ -224,14 +228,14 @@ class Convert(Command):
         Defines the input JSON-lines source parameter and output target flags via
         `add_output_arguments`.
         """
-        opts = self.parser.add_argument_group(Colors.wrap("📥 Inputs", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("📥 Inputs", Colors.BOLD))
         opts.add_argument(
             "jsonl",
             default="stdin",
             help="Serialised results in JSON-lines format (default: stdin)",
         )
 
-        opts = self.parser.add_argument_group(Colors.wrap("📤 Outputs", Colors.BOLD))  # type: ignore
+        opts = self.parser.add_argument_group(Colors.wrap("📤 Outputs", Colors.BOLD))
         self.add_output_arguments(opts, tsv_flags=("-t", "--tsv"), include_json=False)
 
     def __call__(self, args: argparse.Namespace) -> None:
@@ -249,19 +253,19 @@ class Convert(Command):
         try:
             from orjson import loads
         except ImportError:
-            self.cli.exit("orjson not installed. Please run: pip install kaptive[json]")  # type: ignore
+            self.cli.exit("orjson not installed. Please run: pip install kaptive[json]")
 
         from kaptive.serotyping import SerotypingResult
 
-        exporter = ResultExporter(self.cli, args)  # type: ignore
+        exporter = ResultExporter(self.cli, args)
 
-        handle = self.cli.open_file(args.jsonl, mode="rb")  # type: ignore
-        for line in self.cli.progress(handle, "💱 Converting results..."):  # type: ignore
+        handle = self.cli.open_file(args.jsonl, mode="rb")
+        for line in self.cli.progress(handle, "💱 Converting results..."):
             line = line.strip()
             if not line:
                 continue
 
-            result = SerotypingResult.from_dict(loads(line))  # type: ignore
+            result = SerotypingResult.from_dict(loads(line))
             exporter(result)
 
-        self.cli.msg("✅ Conversion complete.")  # type: ignore
+        self.cli.msg("✅ Conversion complete.")

@@ -7,24 +7,26 @@ Provides modular OOP plotting components for:
 Classes:
     [`BasePlotter`][kaptive.plotting.BasePlotter]: Abstract base class providing color palette and layout helpers.
     [`GeneStyleManager`][kaptive.plotting.GeneStyleManager]: Manager for gene state visual styles and state names.
-    [`GeneGlyphPlotter`][kaptive.plotting.GeneGlyphPlotter]: Component for rendering gene polygon glyphs and hover markers.
+    [`GeneGlyphPlotter`][kaptive.plotting.GeneGlyphPlotter]: Component for rendering gene polygon glyphs
+        and hover markers.
     [`LocusBackbonePlotter`][kaptive.plotting.LocusBackbonePlotter]: Component for rendering locus backbone lines.
     [`SerotypingResultPlotter`][kaptive.plotting.SerotypingResultPlotter]: Plotter for single-locus serotyping results.
     [`LocusComparisonPlotter`][kaptive.plotting.LocusComparisonPlotter]: Plotter for multi-locus comparison graphs.
 """
 
 import zlib
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-import numba
 import numpy as np
+import numpy.typing as npt
 import plotly.express as px
 import plotly.graph_objects as go
 
 from kaptive.compare import LocusComparisons
+from kaptive.core._numba import njit
 from kaptive.core.interval import Intervals
 from kaptive.serotyping import GeneState, SerotypingResult
 
@@ -69,7 +71,7 @@ class BasePlotter(ABC):
         """
         hex_col = hex_col.lstrip("#")
         if len(hex_col) == 6:
-            return tuple(int(hex_col[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore
+            return (int(hex_col[0:2], 16), int(hex_col[2:4], 16), int(hex_col[4:6], 16))
         return (128, 128, 128)
 
     @classmethod
@@ -84,7 +86,8 @@ class BasePlotter(ABC):
     ) -> tuple[np.ndarray, np.ndarray]:
         r"""Generate 2D polygon vertex coordinates for drawing gene glyphs.
 
-        Delegates to [`GeneGlyphPlotter._generate_gene_coordinates`][kaptive.plotting.GeneGlyphPlotter._generate_gene_coordinates].
+        Delegates to
+        [`GeneGlyphPlotter._generate_gene_coordinates`][kaptive.plotting.GeneGlyphPlotter._generate_gene_coordinates].
 
         Args:
             starts (np.ndarray): Gene start coordinates.
@@ -133,15 +136,6 @@ class BasePlotter(ABC):
             layout_kwargs["yaxis"] = yaxis
 
         fig.update_layout(**layout_kwargs)
-
-    @abstractmethod
-    def __call__(self, *args: Any, **kwargs: Any) -> go.Figure:
-        r"""Abstract call interface for rendering a Plotly figure.
-
-        Returns:
-            go.Figure: Interactive Plotly figure.
-        """
-        pass
 
 
 class GeneStyleManager:
@@ -290,10 +284,10 @@ class GeneGlyphPlotter:
         ends: np.ndarray,
         strands: np.ndarray,
         y_positions: np.ndarray,
-        cluster_keys: Sequence[Any],
+        cluster_keys: Sequence[Any] | npt.NDArray[Any],
         states: np.ndarray | None,
         hover_texts: Sequence[str],
-        legend_names: Sequence[str] | None = None,
+        legend_names: Sequence[str] | npt.NDArray[np.str_] | None = None,
         dark_mode: bool = False,
         seen_clusters: set[str] | None = None,
         showlegend: bool = True,
@@ -618,10 +612,10 @@ class SerotypingResultPlotter(BasePlotter):
             ends=plot_ends,
             strands=plot_strands,
             y_positions=y_positions,
-            cluster_keys=cluster_names,  # type: ignore
+            cluster_keys=cluster_names,
             states=states,
             hover_texts=hover_texts,
-            legend_names=cluster_names,  # type: ignore
+            legend_names=cluster_names,
             dark_mode=dark_mode,
         )
 
@@ -650,7 +644,7 @@ class LocusComparisonPlotter(BasePlotter):
     """
 
     @staticmethod
-    @numba.njit(cache=True, nogil=True)
+    @njit(cache=True, nogil=True)
     def _connected_components(n: int, edges_u: np.ndarray, edges_v: np.ndarray) -> np.ndarray:
         r"""Compute connected components of a gene homology graph using disjoint-set union-find.
 
@@ -664,7 +658,7 @@ class LocusComparisonPlotter(BasePlotter):
         """
         parent = np.arange(n, dtype=np.int32)
 
-        def find(i):
+        def find(i: int) -> int:
             root = i
             while root != parent[root]:
                 root = parent[root]
@@ -675,7 +669,7 @@ class LocusComparisonPlotter(BasePlotter):
                 curr = nxt
             return root
 
-        def union(i, j) -> None:
+        def union(i: int, j: int) -> None:
             root_i = find(i)
             root_j = find(j)
             if root_i != root_j:
@@ -940,7 +934,7 @@ class LocusComparisonPlotter(BasePlotter):
             ends=ends,
             strands=strands,
             y_positions=base_y,
-            cluster_keys=labels,  # type: ignore
+            cluster_keys=labels,
             states=states_arr,
             hover_texts=cluster_hover_texts,
             dark_mode=dark_mode,

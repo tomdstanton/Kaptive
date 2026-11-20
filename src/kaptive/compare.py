@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Self
 import numpy as np
 import numpy.typing as npt
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core.collections import BatchedContainer, BatchIndex
 from kaptive.core.interval import Intervals
 from kaptive.core.kmers import RandstrobeIndex
 from kaptive.core.pairwise import PairwiseAligner, PairwiseAlignments
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 # Classes --------------------------------------------------------------------------------------------------------------
 @dataclass(slots=True, frozen=True)
-class LocusComparisonEdges(BatchedContainer[Any, "LocusComparisonEdges"]):
+class LocusComparisonEdges(BatchedContainer):
     r"""A high-performance SoA container for forward cross-locus protein alignments.
 
     Stores index pointers and alignment statistics for protein-level pairwise hits
@@ -71,7 +71,7 @@ class LocusComparisonEdges(BatchedContainer[Any, "LocusComparisonEdges"]):
         """
         return len(self.query_locus_indices)
 
-    def __getitem__(self, item: int | slice | npt.NDArray[Any] | list[int]) -> "Any | LocusComparisonEdges":
+    def __getitem__(self, item: BatchIndex) -> "LocusComparisonEdges":
         r"""Slice or filter alignment edges using a slice or array mask.
 
         Args:
@@ -92,11 +92,11 @@ class LocusComparisonEdges(BatchedContainer[Any, "LocusComparisonEdges"]):
             target_indices=self.target_indices[item],
             global_query_indices=self.global_query_indices[item],
             global_target_indices=self.global_target_indices[item],
-            alignments=self.alignments[item],  # type: ignore
+            alignments=self.alignments[item],
         )
 
     @classmethod
-    def empty(cls) -> "LocusComparisonEdges":
+    def empty(cls) -> Self:
         r"""Create an empty `LocusComparisonEdges` instance.
 
         Returns:
@@ -113,7 +113,7 @@ class LocusComparisonEdges(BatchedContainer[Any, "LocusComparisonEdges"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenate multiple `LocusComparisonEdges` batches into a single container.
 
         Args:
@@ -122,16 +122,17 @@ class LocusComparisonEdges(BatchedContainer[Any, "LocusComparisonEdges"]):
         Returns:
             LocusComparisonEdges: Concatenated container holding all input batches.
         """
-        if not batches:
-            return cls.empty()  # type: ignore
+        batches_list = list(batches)
+        if not batches_list:
+            return cls.empty()
         return cls(
-            query_locus_indices=np.concatenate([b.query_locus_indices for b in batches]),
-            target_locus_indices=np.concatenate([b.target_locus_indices for b in batches]),
-            query_indices=np.concatenate([b.query_indices for b in batches]),
-            target_indices=np.concatenate([b.target_indices for b in batches]),
-            global_query_indices=np.concatenate([b.global_query_indices for b in batches]),
-            global_target_indices=np.concatenate([b.global_target_indices for b in batches]),
-            alignments=PairwiseAlignments.concat([b.alignments for b in batches]),
+            query_locus_indices=np.concatenate([b.query_locus_indices for b in batches_list]),
+            target_locus_indices=np.concatenate([b.target_locus_indices for b in batches_list]),
+            query_indices=np.concatenate([b.query_indices for b in batches_list]),
+            target_indices=np.concatenate([b.target_indices for b in batches_list]),
+            global_query_indices=np.concatenate([b.global_query_indices for b in batches_list]),
+            global_target_indices=np.concatenate([b.global_target_indices for b in batches_list]),
+            alignments=PairwiseAlignments.concat([b.alignments for b in batches_list]),
         )
 
 
@@ -205,7 +206,7 @@ class LocusComparator:
         k: int = 10,
         s: int = 5,
         min_score: int = 1,
-        aligner_kwargs: dict | None = None,  # type: ignore
+        aligner_kwargs: dict[str, Any] | None = None,
     ) -> None:
         r"""Initialise the multi-locus comparator engine.
 
@@ -248,7 +249,8 @@ class LocusComparator:
             n_genes = len(inp.proteins)
             if len(inp.backbone) != n_genes:
                 raise ValueError(
-                    f"Locus '{inp.name}': backbone length ({len(inp.backbone)}) does not match protein count ({n_genes})"
+                    f"Locus '{inp.name}': backbone length ({len(inp.backbone)}) "
+                    f"does not match protein count ({n_genes})"
                 )
 
             if inp.gene_descriptions is not None:
@@ -267,7 +269,8 @@ class LocusComparator:
 
                 if len(d_arr) != n_genes:
                     raise ValueError(
-                        f"Locus '{inp.name}': gene_descriptions length ({len(d_arr)}) does not match protein count ({n_genes})"
+                        f"Locus '{inp.name}': gene_descriptions length ({len(d_arr)}) "
+                        f"does not match protein count ({n_genes})"
                     )
                 desc_list.append(d_arr)
             else:
@@ -277,7 +280,8 @@ class LocusComparator:
                 s_arr = np.asarray(inp.gene_states, dtype=np.int8)
                 if len(s_arr) != n_genes:
                     raise ValueError(
-                        f"Locus '{inp.name}': gene_states length ({len(s_arr)}) does not match protein count ({n_genes})"
+                        f"Locus '{inp.name}': gene_states length ({len(s_arr)}) "
+                        f"does not match protein count ({n_genes})"
                     )
                 state_list.append(s_arr)
             else:
@@ -295,22 +299,21 @@ class LocusComparator:
         # Normalise backbones
         norm_backbones = []
         for i, bb in enumerate(backbones):
-            if locus_pieces is not None and i < len(locus_pieces) and locus_pieces[i] is not None:
-                lp = locus_pieces[i]
+            if locus_pieces is not None and i < len(locus_pieces) and (lp := locus_pieces[i]) is not None:
                 # Determine piece indices for each gene
                 p_idx = np.zeros(len(bb), dtype=np.int32)
-                for p in range(len(lp)):  # type: ignore
-                    mask = (bb.starts >= lp.starts[p]) & (bb.ends <= lp.ends[p])  # type: ignore
-                    if gene_ctg_indices is not None and gene_ctg_indices[i] is not None:
-                        mask &= gene_ctg_indices[i] == lp.ctg_indices[p]  # type: ignore
+                for p in range(len(lp)):
+                    mask = (bb.starts >= lp.starts[p]) & (bb.ends <= lp.ends[p])
+                    if gene_ctg_indices is not None and (ctg_idx := gene_ctg_indices[i]) is not None:
+                        mask &= ctg_idx == lp.ctg_indices[p]
                     p_idx[mask] = p
                 # Assume piece_order is linear 0..N-1 as Serotyper.__call__ builds them in expected order
-                p_order = np.arange(len(lp), dtype=np.int32)  # type: ignore
-                bb_norm = bb.arrange(p_idx, p_order, lp.starts, lp.ends, lp.strands)  # type: ignore
+                p_order = np.arange(len(lp), dtype=np.int32)
+                bb_norm = bb.arrange(p_idx, p_order, lp.starts, lp.ends, lp.strands)
                 norm_backbones.append(bb_norm)
             else:
                 if len(bb) > 0:
-                    bb_norm = bb.shift(-np.min(bb.starts))  # type: ignore
+                    bb_norm = bb.shift(-np.min(bb.starts))
                 else:
                     bb_norm = bb
                 norm_backbones.append(bb_norm)

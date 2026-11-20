@@ -7,9 +7,9 @@ Attributes:
     __version__ (str): Installed package version or "unknown" if not installed.
 """
 
-try:
-    import importlib.metadata
+import importlib.metadata
 
+try:
     __version__ = importlib.metadata.version("kaptive")
-except importlib.metadata.PackageNotFoundError:  # type: ignore
+except importlib.metadata.PackageNotFoundError:
     __version__ = "unknown"

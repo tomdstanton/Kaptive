@@ -48,14 +48,14 @@ class KaptiveWebClient:
         if not self.base_url.endswith("/api"):
             self.base_url += "/api"
 
-    def _request(
+    def _request_bytes(
         self,
         endpoint: str,
         method: str = "GET",
         data: bytes | None = None,
         headers: dict[str, str] | None = None,
-    ) -> Any:
-        r"""Send HTTP request to specified API endpoint and parse response.
+    ) -> bytes:
+        r"""Send HTTP request to specified API endpoint and return raw response bytes.
 
         Args:
             endpoint (str): API path suffix (e.g., `"/serotype/runs/123"`).
@@ -64,7 +64,7 @@ class KaptiveWebClient:
             headers (dict[str, str] | None): Optional dictionary of request header overrides. Defaults to `None`.
 
         Returns:
-            Any: Decoded JSON dictionary/list or raw response bytes.
+            bytes: Decompressed or raw response body bytes.
 
         Raises:
             KaptiveWebClientError: If an HTTP error response or network connectivity error occurs.
@@ -81,11 +81,9 @@ class KaptiveWebClient:
 
         try:
             with urlopen(req) as response:
-                body = response.read()
+                body: bytes = response.read()
                 if response.info().get("Content-Encoding") == "gzip":
                     body = gzip.decompress(body)  # If the response is gzipped, decompress it
-                if response.info().get_content_type() == "application/json":
-                    return json.loads(body.decode("utf-8"))
                 return body
 
         except HTTPError as e:
@@ -101,6 +99,33 @@ class KaptiveWebClient:
                 f"Network error: Failed to connect to {self.base_url}. "
                 f"Ensure you have an active internet connection. ({e.reason})"
             )
+
+    def _request_json(
+        self,
+        endpoint: str,
+        method: str = "GET",
+        data: bytes | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        r"""Send HTTP request to specified API endpoint and decode a JSON object response.
+
+        Args:
+            endpoint (str): API path suffix (e.g., `"/serotype/runs/123"`).
+            method (str): HTTP request method verb (`"GET"`, `"POST"`, etc.). Defaults to `"GET"`.
+            data (bytes | None): Raw request payload bytes to transmit. Defaults to `None`.
+            headers (dict[str, str] | None): Optional dictionary of request header overrides. Defaults to `None`.
+
+        Returns:
+            dict[str, Any]: Decoded JSON object dictionary.
+
+        Raises:
+            KaptiveWebClientError: If an HTTP, network, or JSON decoding error occurs.
+        """
+        body = self._request_bytes(endpoint, method=method, data=data, headers=headers)
+        parsed = json.loads(body.decode("utf-8"))
+        if not isinstance(parsed, dict):
+            raise KaptiveWebClientError(f"Unexpected non-object JSON response from {endpoint}")
+        return parsed
 
     @staticmethod
     def _build_multipart_form(files: list[str]) -> tuple[bytes, str]:
@@ -148,8 +173,8 @@ class KaptiveWebClient:
         body, content_type = self._build_multipart_form(files)
         # Endpoint expects URL-encoded species name
         endpoint = f"/serotype/{quote(species)}"
-        response = self._request(endpoint, method="POST", data=body, headers={"Content-Type": content_type})
-        return response.get("run_id")
+        response = self._request_json(endpoint, method="POST", data=body, headers={"Content-Type": content_type})
+        return str(response["run_id"])
 
     def get_run(self, run_id: str) -> dict[str, Any]:
         r"""Fetch execution status and result dictionary for a serotyping job run.
@@ -164,7 +189,7 @@ class KaptiveWebClient:
             KaptiveWebClientError: If network request or server query fails.
         """
         endpoint = f"/serotype/runs/{run_id}"
-        return self._request(endpoint, method="GET")
+        return self._request_json(endpoint, method="GET")
 
     def download_jsonl(self, genome_ids: list[str]) -> bytes:
         r"""Download JSONL serotyping results payload for specified genome IDs.
@@ -180,4 +205,4 @@ class KaptiveWebClient:
         """
         endpoint = "/serotype/results/download/jsonl"
         data = json.dumps({"genome_ids": genome_ids}).encode("utf-8")
-        return self._request(endpoint, method="POST", data=data, headers={"Content-Type": "application/json"})
+        return self._request_bytes(endpoint, method="POST", data=data, headers={"Content-Type": "application/json"})

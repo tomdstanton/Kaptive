@@ -20,7 +20,7 @@ from typing import Any, Self
 import numpy as np
 import numpy.typing as npt
 
-from kaptive.core.collections import BatchedContainer
+from kaptive.core.collections import BatchedContainer, BatchIndex
 
 
 # Exceptions and warnings ----------------------------------------------------------------------------------------------
@@ -76,9 +76,9 @@ class DatabaseMetadata:
     owner: str
     repo: str
     branch: str
-    contact: dict  # type: ignore
-    phenotype_logic: dict  # type: ignore
-    antigenic_units: dict  # type: ignore
+    contact: dict[str, str]
+    phenotype_logic: dict[str, dict[str, Any]]
+    antigenic_units: dict[str, Any]
 
     @property
     def parsed_version(self) -> tuple[int, ...]:
@@ -94,7 +94,7 @@ class DatabaseMetadata:
         return tuple(int(x) for x in pat.findall(str(self.version)))
 
     @classmethod
-    def from_dict(cls, data: dict) -> "DatabaseMetadata":  # type: ignore
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         r"""Instantiates a `DatabaseMetadata` object from a dictionary.
 
         Validates required fields, casts numeric types, and sets default fallback dictionaries for
@@ -167,7 +167,7 @@ class Phenotype:
 
 
 @dataclass(frozen=True, slots=True)
-class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
+class Phenotypes(BatchedContainer):
     r"""Structure-of-Arrays (SoA) container for vectorized phenotype evaluation.
 
     Encapsulates boolean matrix masks and priority arrays across a batch of [`Phenotype`][kaptive.db.models.Phenotype]
@@ -201,7 +201,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         """
         return len(self.ids)
 
-    def __getitem__(self, item: int | slice | npt.NDArray[Any] | list[int]) -> "Any | Phenotypes":
+    def __getitem__(self, item: BatchIndex) -> "Phenotypes":
         r"""Slices or masks the `Phenotypes` container batch along the primary dimension.
 
         Args:
@@ -228,7 +228,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         )
 
     @classmethod
-    def empty(cls) -> "Phenotypes":
+    def empty(cls) -> Self:
         r"""Constructs an empty `Phenotypes` batch container.
 
         Returns:
@@ -246,7 +246,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         )
 
     @classmethod
-    def concat(cls, batches: Iterable[Self]) -> Self:  # type: ignore
+    def concat(cls, batches: Iterable[Self]) -> Self:
         r"""Concatenates multiple `Phenotypes` batch containers into a single `Phenotypes` instance.
 
         Args:
@@ -259,7 +259,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         """
         batches = list(batches)
         if not batches:
-            return cls.empty()  # type: ignore
+            return cls.empty()
         return cls(
             ids=np.concatenate([b.ids for b in batches]),
             locus_masks=np.concatenate([b.locus_masks for b in batches]),
@@ -270,7 +270,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
             as_suffix=np.concatenate([b.as_suffix for b in batches]),
         )
 
-    def to_dict(self) -> dict:  # type: ignore
+    def to_dict(self) -> dict[str, Any]:
         r"""Converts the `Phenotypes` container attributes into a dictionary representation.
 
         Returns:
@@ -288,7 +288,7 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Phenotypes":  # type: ignore
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         r"""Reconstructs a `Phenotypes` batch container from a dictionary of array data.
 
         Args:
@@ -297,11 +297,17 @@ class Phenotypes(BatchedContainer[Any, "Phenotypes"]):
         Returns:
             Phenotypes: Reconstructed [`Phenotypes`][kaptive.db.models.Phenotypes] container instance.
         """
-        return cls(  # type: ignore
+        extra_masks = np.array(data["extra_masks"], dtype=np.int8)
+        return cls(
             ids=np.array([p.encode("utf-8") for p in data["ids"]], dtype="S32"),
             locus_masks=np.array(data["locus_masks"], dtype=bool),
-            extra_masks=np.array(data["extra_masks"], dtype=bool),
-            inactive_masks=np.array(data["inactive_masks"], dtype=bool),
+            extra_masks=extra_masks,
+            inactive_masks=np.array(data["inactive_masks"], dtype=np.int8),
+            extra_counts=(
+                np.array(data["extra_counts"], dtype=np.int8)
+                if "extra_counts" in data
+                else extra_masks.sum(axis=1, dtype=np.int8)
+            ),
             priorities=np.array(data["priorities"], dtype=np.int8),
             as_suffix=np.array(data["as_suffix"], dtype=bool),
         )

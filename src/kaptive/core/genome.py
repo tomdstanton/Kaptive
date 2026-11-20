@@ -15,13 +15,17 @@ from gzip import open as gzopen
 from lzma import open as lzopen
 from pathlib import Path
 from re import compile as re_compile
-from typing import IO, Any, ClassVar, Self
+from types import TracebackType
+from typing import IO, TYPE_CHECKING, Any, ClassVar, Self
 
 from kaptive.core.seq import SeqRecord, Sequences
 
+if TYPE_CHECKING:
+    from rammappy import Index
+
 
 # Classes --------------------------------------------------------------------------------------------------------------
-class FastaReader(Iterator):  # type: ignore
+class FastaReader(Iterator[SeqRecord]):
     r"""High-performance FASTA file iterator.
 
     Parses raw binary FASTA streams into [`SeqRecord`][kaptive.core.seq.SeqRecord] instances
@@ -53,13 +57,18 @@ class FastaReader(Iterator):  # type: ignore
         """
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         r"""Exit the runtime context and close the underlying binary stream.
 
         Args:
-            exc_type (Any): Exception type if an exception was raised inside context.
-            exc_val (Any): Exception instance if an exception was raised.
-            exc_tb (Any): Traceback object if an exception was raised.
+            exc_type (type[BaseException] | None): Exception type if an exception was raised inside context.
+            exc_val (BaseException | None): Exception instance if an exception was raised.
+            exc_tb (TracebackType | None): Traceback object if an exception was raised.
         """
         self._handle.close()
 
@@ -103,11 +112,11 @@ class GenomeAssembly:
     """
 
     _SEQUENCE_FILE_REGEX = re_compile(r"\.(?P<ext>f(asta|a|na|fn|as))(\.(?P<compression>gz|bz2|xz))?$")
-    _OPENERS: ClassVar[dict[str, Callable]] = {"gz": gzopen, "bz2": bzopen, "xz": lzopen}  # type: ignore
+    _OPENERS: ClassVar[dict[str, Callable[..., Any]]] = {"gz": gzopen, "bz2": bzopen, "xz": lzopen}
     id: str
     contigs: Sequences
     id_map: dict[str, int] = field(init=False, repr=False, hash=False, compare=False)
-    rammappy_index: Any = field(default=None, init=False, repr=False, hash=False, compare=False)
+    rammappy_index: Index | None = field(default=None, init=False, repr=False, hash=False, compare=False)
     _index_lock: threading.Lock = field(
         default_factory=threading.Lock, init=False, repr=False, hash=False, compare=False
     )
@@ -117,11 +126,11 @@ class GenomeAssembly:
         object.__setattr__(self, "id_map", {name: i for i, name in enumerate(self.contigs.ids)})
 
     @classmethod
-    def ensure(cls, genome: Self | str | Path | IO[bytes]) -> Self:
+    def ensure(cls, genome: GenomeAssembly | str | Path | IO[bytes]) -> Self:
         r"""Ensure the input object is coerced into a [`GenomeAssembly`][kaptive.core.genome.GenomeAssembly].
 
         Args:
-            genome (Self | str | Path | IO[bytes]): Existing assembly object, file path,
+            genome (GenomeAssembly | str | Path | IO[bytes]): Existing assembly object, file path,
                 or binary FASTA stream.
 
         Returns:
@@ -129,9 +138,11 @@ class GenomeAssembly:
         """
         if isinstance(genome, cls):
             return genome
-        elif isinstance(genome, (str, Path)):
+        if isinstance(genome, GenomeAssembly):
+            return cls.from_records(genome.id, genome.contigs)
+        if isinstance(genome, (str, Path)):
             return cls.from_file(genome)
-        return cls.from_stream(genome)  # type: ignore
+        return cls.from_stream(genome)
 
     def __len__(self) -> int:
         r"""Calculate the total number of base pairs across all contigs in the assembly.
@@ -174,21 +185,21 @@ class GenomeAssembly:
         length_val = self.contigs.lengths[idx]
         return self.contigs.seqs[offset_val : offset_val + length_val].tobytes()
 
-    def get_rammappy_index(self) -> Any:
+    def get_rammappy_index(self) -> Index:
         r"""Lazily build and return a thread-safe cached `rammappy.Index` for the assembly.
 
         Returns:
-            Any: The compiled `rammappy.Index` instance.
+            Index: The compiled `rammappy.Index` instance.
         """
-        if self.rammappy_index is None:
+        if (idx := self.rammappy_index) is None:
             with self._index_lock:
-                if self.rammappy_index is None:
+                if (idx := self.rammappy_index) is None:
                     import rammappy
 
                     contig_seqs = [(c.id.encode(), c.seq) for c in self.contigs]
                     idx = rammappy.Index.build(contig_seqs)
                     object.__setattr__(self, "rammappy_index", idx)
-        return self.rammappy_index
+        return idx
 
     @classmethod
     def from_file(cls, filepath: str | Path) -> Self:

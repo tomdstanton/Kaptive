@@ -221,7 +221,7 @@ class DatabaseManager:
 
         if isinstance(kwd, list):
 
-            def _fetch_update_one(k: str):
+            def _fetch_update_one(k: str) -> tuple[str, bytes, bytes] | None:
                 db_path = cls._get_existing_db_path(k)
                 json_path = db_path.with_suffix(".json")
                 if json_path.is_file():
@@ -249,7 +249,7 @@ class DatabaseManager:
                 yield res
 
     @classmethod
-    def install(cls, kwd: str | list[str]) -> Database | list[Database | None]:
+    def install(cls, kwd: str | list[str]) -> Database | None | list[Database | None]:
         r"""Install known, officially supported databases by keyword.
 
         Looks up the repository details (owner, repo, database name) associated with the provided keyword(s)
@@ -283,7 +283,7 @@ class DatabaseManager:
 
         if isinstance(kwd, list):
 
-            def _fetch_one(k: str):
+            def _fetch_one(k: str) -> tuple[str, bytes, bytes] | None:
                 if (known_info := cls._KNOWN.get(k, None)) is None:
                     raise DatabaseError(f'"{k}" is not a known database, choose from {list(cls._KNOWN.keys())}')
                 return cls._fetch_files(*known_info)
@@ -301,7 +301,7 @@ class DatabaseManager:
 
         if (known_info := cls._KNOWN.get(kwd, None)) is None:
             raise DatabaseError(f'"{kwd}" is not a known database, choose from {list(cls._KNOWN.keys())}')
-        return cls.add(*known_info)  # type: ignore
+        return cls.add(*known_info)
 
     @classmethod
     def _fetch_files(
