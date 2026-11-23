@@ -122,6 +122,10 @@ possibly-unresolved-reference = "warn"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
+pythonpath = ["."]
 testpaths = ["tests"]
 norecursedirs = [".venv", "dist", "build", "scripts", ".github", ".git", ".ruff_cache"]
-addopts = "-q --tb=short --show-capture=no -n auto --dist loadfile"
+addopts = "-q --tb=short --show-capture=no -n auto --dist loadgroup"
+markers = [
+    "integration: integration tests across _KNOWN databases, LOLO cross-validation, and NCBI test.tsv genomes",
+]
