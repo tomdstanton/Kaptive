@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ "master", "main" ]
+    branches: [ "master", "main", "develop" ]
   pull_request:
-    branches: [ "master", "main" ]
+    branches: [ "master", "main", "develop" ]
+  schedule:
+    # Run exhaustive all-loci cross-validation across all official databases weekly (Monday 03:00 UTC)
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
 
 jobs:
   test:
@@ -17,6 +21,12 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+
+      - name: Cache Kaptive databases and NCBI test assemblies
+        uses: actions/cache@v4
+        with:
+          path: ~/.kaptive
+          key: kaptive-db-cache-${{ runner.os }}-v1
 
       - name: Sync dependencies
         run: uv sync --locked --dev
@@ -33,5 +43,15 @@ jobs:
       - name: Check docs
         run: uv run --no-sync zensical build --strict
 
-      - name: Run tests
+      - name: Run fast offline unit & simulation tests
         run: uv run --no-sync pytest
+
+      - name: Run decentralized database & LOLO integration tests
+        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        continue-on-error: true
+        run: uv run --no-sync pytest --integration
+
+      - name: Run exhaustive all-loci database & LOLO validation
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: uv run --no-sync pytest --integration --all-loci
