@@ -9,9 +9,12 @@ evaluates phenotype modifications, and produces comprehensive
 [`SerotypingResult`][kaptive.serotyping.models.SerotypingResult] objects.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 import rammappy
 from rammappy.align import Aligner
 
@@ -98,17 +101,24 @@ class Serotyper:
         self.partial_edge_tolerance: int = partial_edge_tolerance
         self._protein_aligner = PairwiseAligner()
 
-        # Count expected genes per locus for weighting
-        self._expected_genes_per_locus = np.zeros(len(self._db.loci), dtype=np.float32)
+        # Count expected genes per locus for weighting and mark Extra-genes pseudo-loci
+        n_loci = len(self._db.loci)
+        expected_per_locus = np.zeros(n_loci, dtype=np.float32)
         np.add.at(
-            self._expected_genes_per_locus,
+            expected_per_locus,
             self._db.gene_locus_indices[~self._db.extra_genes],
             1.0,
         )
-        self._expected_genes_per_locus = np.maximum(self._expected_genes_per_locus, 1.0)
+        extra_locus_mask = expected_per_locus == 0.0
+        extra_locus_mask.flags.writeable = False
+        self._extra_locus_mask: npt.NDArray[np.bool_] = extra_locus_mask
 
-        # Prepare metadata for alignment iterator parsing
-        self._gene_seqs = [
+        expected_per_locus = np.maximum(expected_per_locus, 1.0)
+        expected_per_locus.flags.writeable = False
+        self._expected_genes_per_locus: npt.NDArray[np.float32] = expected_per_locus
+
+        # Prepare immutable metadata tuples for alignment iterator parsing
+        self._gene_seqs: tuple[tuple[bytes, bytes], ...] = tuple(
             (
                 str(i).encode(),
                 bytes(
@@ -118,33 +128,22 @@ class Serotyper:
                 ),
             )
             for i in range(len(self._db.genes))
+        )
+        self._gene_meta: list[tuple[str, int]] = [
+            (str(i), int(self._db.genes.lengths[i])) for i in range(len(self._db.genes))
         ]
-        self._gene_meta = [(str(i), self._db.genes.lengths[i]) for i in range(len(self._db.genes))]
 
-    def __call__(self, genome: GenomeAssembly | str | Path) -> SerotypingResult | None:
-        r"""Perform *in silico* serotyping on a target bacterial genome assembly.
-
-        Maps reference locus genes against the provided genome assembly, ranks candidate loci,
-        reconstructs locus boundaries, evaluates gene integrity and amino acid identity, and resolves the predicted
-        serotype phenotype.
+    def align_genes(self, genome: GenomeAssembly | str | Path) -> Alignments:
+        r"""Map all reference database genes against `genome` and return raw `Alignments`.
 
         Args:
-            genome (GenomeAssembly | str | Path): Target genome assembly as a
-                [`GenomeAssembly`][kaptive.core.genome.GenomeAssembly] instance or filesystem path (`str` or `Path`)
-                to a FASTA file.
+            genome (GenomeAssembly | str | Path): Target genome assembly or FASTA file path.
 
         Returns:
-            SerotypingResult | None: Complete serotyping analysis result containing best matching locus, predicted
-                phenotype, gene hit classifications, spatial locus pieces, and confidence metrics.
-                See [`SerotypingResult`][kaptive.serotyping.models.SerotypingResult].
-
-        Raises:
-            FileNotFoundError: If `genome` is passed as a file path that does not exist on disk.
-            ValueError: If the genome assembly contains no valid contigs or sequence data cannot be parsed.
+            Alignments: Unfiltered gene-to-contig [`Alignments`][kaptive.core.alignment.Alignments] batch.
         """
-        genome = GenomeAssembly.ensure(genome)
-
-        contig_index = genome.get_rammappy_index()
+        genome_obj = GenomeAssembly.ensure(genome)
+        contig_index = genome_obj.get_rammappy_index()
         aligner = Aligner(index=contig_index, preset=None, do_cigar=True, do_cs=False, do_md=False)
         opts = aligner.options
         opts.filtering.best_n = 50000
@@ -152,56 +151,69 @@ class Serotyper:
         aligner.options = opts
 
         gene_aln_batch = aligner.map_batch(self._gene_seqs)
-        gene_alns = Alignments.from_mapping_iterators(self._gene_meta, gene_aln_batch)
+        return Alignments.from_mapping_iterators(self._gene_meta, gene_aln_batch)
+
+    def score_and_reconstruct(
+        self,
+        genome: GenomeAssembly,
+        gene_alns: Alignments,
+    ) -> SerotypingResult | None:
+        r"""Score candidate loci, reconstruct locus pieces, and evaluate phenotype from `gene_alns`.
+
+        Args:
+            genome (GenomeAssembly): Target genome assembly corresponding to `gene_alns`.
+            gene_alns (Alignments): Precomputed alignments from
+                [`align_genes`][kaptive.serotyping.core.Serotyper.align_genes].
+
+        Returns:
+            SerotypingResult | None: Complete serotyping call, or `None` if no valid candidate loci exist.
+        """
+        if bool(np.all(self._extra_locus_mask)):
+            return None
 
         # Calculate total coverage per gene across all alignments for reporting
         q_indices = gene_alns.q_names.astype(np.int32)
         q_lengths = gene_alns.q_aln_lens
         total_q_covs = np.zeros(len(self._db.genes), dtype=np.float32)
-        np.add.at(total_q_covs, q_indices, q_lengths)
+        if len(q_indices) > 0:
+            np.add.at(total_q_covs, q_indices, q_lengths)
         total_q_covs /= self._db.genes.lengths
 
         # Scoring phase ------------------------------------------------------------------------------------------------
-        # Calculate alignment query coverage per alignment
+        locus_scores = np.zeros(len(self._db.loci), dtype=np.float64)
+        locus_counts = np.zeros(len(self._db.loci), dtype=np.float32)
+
         q_covs = gene_alns.q_covs
         valid_cov_mask = q_covs >= self.min_gene_coverage
+        if bool(np.any(valid_cov_mask)):
+            valid_alns = gene_alns[valid_cov_mask]
+            valid_q_covs = q_covs[valid_cov_mask]
+            valid_gene_indices = valid_alns.q_names.astype(np.int32)
 
-        valid_alns = gene_alns[valid_cov_mask]
-        valid_q_covs = q_covs[valid_cov_mask]
-        valid_gene_indices = valid_alns.q_names.astype(np.int32)
+            # Sort to find the best alignment per gene (highest q_cov, tie-breaker: highest score)
+            order = np.lexsort((-valid_alns.scores, -valid_q_covs, valid_gene_indices))
+            valid_gene_indices = valid_gene_indices[order]
+            valid_q_covs = valid_q_covs[order]
 
-        # Sort to find the best alignment per gene (highest q_cov, tie-breaker: highest score)
-        order = np.lexsort((-valid_alns.scores, -valid_q_covs, valid_gene_indices))
-        valid_alns = valid_alns[order]
-        valid_gene_indices = valid_gene_indices[order]
-        valid_q_covs = valid_q_covs[order]
+            # Take the first (best) alignment for each gene
+            _, unique_indices = np.unique(valid_gene_indices, return_index=True)
+            best_gene_indices = valid_gene_indices[unique_indices]
+            best_q_covs = valid_q_covs[unique_indices]
 
-        # Take the first (best) alignment for each gene
-        _, unique_indices = np.unique(valid_gene_indices, return_index=True)
-        best_gene_indices = valid_gene_indices[unique_indices]
-        best_q_covs = valid_q_covs[unique_indices]
+            valid_locus_indices = self._db.gene_locus_indices[best_gene_indices]
+            valid_not_extra = ~self._db.extra_genes[best_gene_indices]
 
-        valid_locus_indices = self._db.gene_locus_indices[best_gene_indices]
-        valid_not_extra = ~self._db.extra_genes[best_gene_indices]
-
-        # Calculate locus scores by summing best q_covs of valid expected genes
-        locus_scores = np.zeros(len(self._db.loci), dtype=np.float64)
-        np.add.at(
-            locus_scores,
-            valid_locus_indices[valid_not_extra],
-            best_q_covs[valid_not_extra],
-        )
-
-        # Calculate completeness count per locus (unique expected genes matched per locus)
-        locus_counts = np.zeros(len(self._db.loci), dtype=np.float32)
-        matched_expected_genes = best_gene_indices[valid_not_extra]
-        np.add.at(locus_counts, self._db.gene_locus_indices[matched_expected_genes], 1.0)
+            np.add.at(
+                locus_scores,
+                valid_locus_indices[valid_not_extra],
+                best_q_covs[valid_not_extra],
+            )
+            matched_expected_genes = best_gene_indices[valid_not_extra]
+            np.add.at(locus_counts, self._db.gene_locus_indices[matched_expected_genes], 1.0)
 
         locus_completeness = locus_counts / self._expected_genes_per_locus
         final_locus_scores = locus_scores * (locus_completeness**3)
-
-        self._last_scores = final_locus_scores.copy()
-        self._last_completeness = locus_completeness.copy()
+        final_locus_scores[self._extra_locus_mask] = -1.0
 
         best_locus_idx = int(np.argmax(final_locus_scores))
         best_locus_name = self._db.loci.ids[best_locus_idx]
@@ -484,3 +496,26 @@ class Serotyper:
             typeable=typeable,
             missing_expected_genes=missing_expected_genes,
         )
+
+    def __call__(self, genome: GenomeAssembly | str | Path) -> SerotypingResult | None:
+        r"""Perform *in silico* serotyping on a target bacterial genome assembly.
+
+        Maps reference locus genes against the provided genome assembly, ranks candidate loci,
+        reconstructs locus boundaries, evaluates gene integrity and amino acid identity, and resolves
+        the predicted serotype phenotype.
+
+        Args:
+            genome (GenomeAssembly | str | Path): Target genome assembly as a
+                [`GenomeAssembly`][kaptive.core.genome.GenomeAssembly] instance or filesystem path (`str` or `Path`)
+                to a FASTA file.
+
+        Returns:
+            SerotypingResult | None: Complete serotyping analysis result containing best matching locus, predicted
+                phenotype, gene hit classifications, spatial locus pieces, and confidence metrics.
+
+        Raises:
+            FileNotFoundError: If `genome` is passed as a file path that does not exist on disk.
+            ValueError: If the genome assembly contains no valid contigs or sequence data cannot be parsed.
+        """
+        genome_obj = GenomeAssembly.ensure(genome)
+        return self.score_and_reconstruct(genome_obj, self.align_genes(genome_obj))
