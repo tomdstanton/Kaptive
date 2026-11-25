@@ -264,3 +264,33 @@ Setting up your database is easy, just:
        (e.g., `Database_Name.toml` pairs with `Database_Name.gbk`).
      - Pull before you work. Because the GitHub Action makes automated commits to update the TOML files, always
        run `git pull` before starting new work to ensure your local branch has the latest version strings.
+
+## :lucide-flask-conical: Automated Testing & LOLO Cross-Validation
+
+Kaptive automatically validates every supported database without requiring curators to write Python test code.
+
+### Curated Genome Regression Table (`tests/test.tsv`)
+
+Curators can supply a tab-separated `tests/test.tsv` (or root `test.tsv`) in their database repository to assert expected serotyping calls across reference or clinical assemblies. Genomes can be specified either as **versioned NCBI assembly accessions** (`GCF_...` / `GCA_...`, downloaded on demand via the NCBI Datasets v2 API and cached locally in `~/.kaptive/genomes/`) or as relative FASTA paths (`tests/<isolate>.fna.gz`):
+
+```tsv
+genome	database	locus	phenotype	typeable	problems	min_coverage	min_identity	notes
+GCF_000009885.1	kpsc_k	KL1	K1	true	none	95.0	95.0	NTUH-K2044 reference K1
+GCF_000240185.1	kpsc_k	KL103	unknown	true		90.0	90.0	HS11286 reference
+mutant_isolate.fna.gz	kpsc_k	KL2	Capsule null	true	!			Frameshifted isolate
+```
+
+- **Required columns:** `genome`, `database`, `locus`, `phenotype`, `typeable` (`true`/`false`).
+- **Optional columns** (only asserted when non-empty): `problems` (Kaptive symbols `?-*+!`, `none`, or `|`-delimited flag names), `missing_genes`, `min_coverage`, `min_identity`, `sha256`, and `notes`.
+
+### Leave-One-Locus-Out (LOLO) Sister Sub-Loci (`[lolo_allowlist]`)
+
+During automated validation, Kaptive runs single-pass **Leave-One-Locus-Out (LOLO)** cross-validation on each reference locus: first verifying that the unmasked database calls the locus at 100% completeness (`typeable = True`, `problems == NONE`), and then masking that locus out of the alignment table. Two loci are deemed indistinguishable if holding one out yields a `typeable = True` call on another locus with **zero problems** (`problems == NONE`) and **all locus genes at or above `id_threshold`**.
+
+If your database intentionally contains allelic sister sub-loci whose genes all exceed `id_threshold` with identical gene architecture (for example `OL2α.1` and `OL2α.2`), declare allowed cross-matches in your `<Database>.toml` using `fnmatch` wildcards:
+
+```toml
+[lolo_allowlist]
+"OL2α*" = ["OL2α*"]
+```
+
