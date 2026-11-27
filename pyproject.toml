@@ -49,6 +49,7 @@ test = [
     "pytest-testmon",
     "pytest-xdist",
     "pytest-cov",
+    "hypothesis",
 ]
 typing = [
     "kaptive[all]",
@@ -124,7 +125,7 @@ possibly-unresolved-reference = "warn"
 minversion = "8.0"
 pythonpath = ["."]
 testpaths = ["tests"]
-norecursedirs = [".venv", "dist", "build", "scripts", ".github", ".git", ".ruff_cache"]
+norecursedirs = [".venv", "dist", "build", "scripts", ".github", ".git", ".ruff_cache", ".hypothesis"]
 addopts = "-q --tb=short --show-capture=no -n auto --dist loadgroup"
 markers = [
     "integration: integration tests across _KNOWN databases, LOLO cross-validation, and NCBI test.tsv genomes",

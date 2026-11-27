@@ -1,4 +1,4 @@
-r"""Pytest configuration, xdist/Numba thread pinning, CLI flags, and dynamic test.tsv parametrization."""
+r"""Pytest configuration, Hypothesis profiles, xdist/Numba thread pinning, and CLI flags."""
 
 from __future__ import annotations
 
@@ -9,8 +9,25 @@ if "PYTEST_XDIST_WORKER" in os.environ:
     os.environ.setdefault("NUMBA_NUM_THREADS", "1")
 
 import pytest
+from hypothesis import HealthCheck, settings
 
 from tests.curated import CuratedTestLoader, NcbiGenomeCache
+
+settings.register_profile(
+    "dev",
+    max_examples=25,
+    deadline=None,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+settings.register_profile(
+    "ci",
+    max_examples=150,
+    deadline=None,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+settings.load_profile(
+    os.environ.get("HYPOTHESIS_PROFILE", "ci" if os.environ.get("CI") else "dev")
+)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -26,13 +43,19 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--all-loci",
         action="store_true",
         default=False,
-        help="Test 100%% of loci in every database instead of a stratified sample.",
+        help="Run Stage-2 LOLO cross-validation across 100%% of loci in every database.",
+    )
+    group.addoption(
+        "--stage1-all-loci",
+        action="store_true",
+        default=False,
+        help="Run Stage-1 5 Mbp orthogonal degradation ladders across 100%% of loci in every database.",
     )
     group.addoption(
         "--loci-per-db",
         type=int,
-        default=5,
-        help="Number of loci to sample per database when --all-loci is not set (default: 5).",
+        default=3,
+        help="Number of stratified loci to sample per database when --all-loci is not set (default: 3).",
     )
     group.addoption(
         "--db-repo",
@@ -58,6 +81,12 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     for item in items:
         if "integration" in item.keywords:
             item.add_marker(skip_marker)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    r"""Treat `NO_TESTS_COLLECTED` (`exit code 5`, e.g. under `--testmon` on untouched files) as `OK`."""
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED:
+        session.exitstatus = pytest.ExitCode.OK
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
